@@ -1,6 +1,5 @@
 import userModel from "./Auth_model.js";
 import jwt from "jsonwebtoken";
-import type { UserInfo } from "./Auth_model.js";
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 
@@ -19,13 +18,14 @@ export const login = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({ message: "invalid email or password" });
     }
-    const userpass: any = user.password;
 
+    const userpass: any = user.password;
     const passwordMatches = await bcrypt.compare(password, userpass);
     if (!passwordMatches) {
       return res.status(401).json({ message: "invalid email or password" });
     }
 
+    const JWT_SEC = process.env.JWT_SECRET;
     if (!JWT_SEC) {
       return res.status(500).json({ message: "JWT secret is not configured" });
     }
@@ -103,7 +103,6 @@ export const logout = async (req: Request, res: Response) => {
   }
 };
 
-
 export const forgotpass = async (req: Request, res: Response) => {
   try {
     const { password, confirmpass, email } = req.body;
@@ -128,7 +127,7 @@ export const forgotpass = async (req: Request, res: Response) => {
     const updatepass = await userModel.findOneAndUpdate(
       { email },
       { password: hashedpass },
-      { new: true }
+      { new: true },
     );
     if (!updatepass) {
       return res.status(400).json({ message: "password not updated" });
@@ -137,5 +136,26 @@ export const forgotpass = async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Forgot password error:", err);
     return res.status(500).json({ message: "error in forgotpass" });
+  }
+};
+
+export const getuser = async (req: Request, res: Response) => {
+  try {
+    const userid : any = req.user;
+
+    const user = await userModel.findOne({ email: userid.email });
+    if (!user) {
+      return res.status(400).json({ message: "user not found" });
+    }
+    const data = {
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+
+    return res.status(200).send(data);
+
+  } catch (err) {
+    return res.status(500).json({ message: "error in get user" });
   }
 };
