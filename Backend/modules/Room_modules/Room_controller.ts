@@ -6,6 +6,7 @@ import { Request , Response } from "express";
 export const Createroom = async (req: Request, res: Response ) => {
   try {
   const roomcode = generateRandomLetters()
+  res.status(200).json(roomcode)
   console.log(roomcode)
   
   } catch (err) {
