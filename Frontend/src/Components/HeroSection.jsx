@@ -1,33 +1,63 @@
 import { useState } from "react";
 import api from "../Api/axios";
-import { Form, useNavigate } from "react-router-dom"; 
-
+import { useNavigate } from "react-router-dom"; 
 
 export default function HeroSection() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [roomcode , setRoomcode] = useState(null)
+  const [roomcode, setRoomcode] = useState("");
+  const [message, setMessage] = useState("");
   const navigate = useNavigate(); 
 
   const createRoom = async () => {
     try {
+      setError("");
       setLoading(true);
       const { data } = await api.post("/room/api/createroom");
       console.log(data);
       navigate(`/${data.roomcode}`); 
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong.");
+      setError(err.response?.data?.message || "Failed to create room. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handlejoinroom = () => {
-    navigate(`/${roomcode}`)
-  }
+  const handlejoinroom = async () => {
+    try {
+      setError("");
+      
+      // Validate input
+      if (!roomcode.trim()) {
+        setError("Please enter a room code.");
+        return;
+      }
+
+      const { data, status } = await api.post("/room/api/getroom", { roomcode });
+      
+      if (status === 201 || status === 200) {
+        navigate(`/${roomcode}`);
+      } else {
+        setMessage("Room not found");
+        setTimeout(() => {
+          setMessage("");
+        }, 3000);
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || "Failed to join room. Try again.";
+      setError(errorMsg);
+    }
+  };
+
   return (
     <section className="min-h-screen bg-[#1a1a1a] flex items-center justify-center px-6">
       <div className="flex flex-col items-center text-center gap-7 max-w-lg w-full">
+        
+        {message && (
+          <div className="px-3 py-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs w-full max-w-xs">
+            {message}
+          </div>
+        )}
 
         {/* Eyebrow tag */}
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
@@ -81,16 +111,20 @@ export default function HeroSection() {
               <rect x="1.5" y="1.5" width="11" height="11" rx="2.5" stroke="currentColor" strokeWidth="1.3" />
               <path d="M4.5 7h5M7 4.5v5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
             </svg>
-           <input
-  name="roomcode"
-  value={roomcode || ""}
-  onChange={(e) => setRoomcode(e.target.value)}
-  type="text"
-  placeholder="Enter a code or link"
-  className="flex-1 bg-transparent text-[#d4d4d4] text-sm placeholder-[#444] outline-none"
-/>
+            <input
+              name="roomcode"
+              value={roomcode}
+              onChange={(e) => setRoomcode(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handlejoinroom()}
+              type="text"
+              placeholder="Enter a code or link"
+              className="flex-1 bg-transparent text-[#d4d4d4] text-sm placeholder-[#444] outline-none"
+            />
           </div>
-          <button onClick={handlejoinroom}  className="px-4 py-3 text-sm font-semibold text-orange-400 hover:text-orange-300 hover:bg-orange-500/5 transition-colors duration-150 border-l border-white/8">
+          <button 
+            onClick={handlejoinroom}
+            className="px-4 py-3 text-sm font-semibold text-orange-400 hover:text-orange-300 hover:bg-orange-500/5 transition-colors duration-150 border-l border-white/8"
+          >
             Join
           </button>
         </div>
