@@ -4,9 +4,9 @@ export interface UserInfo extends Document {
     name: string;
     email: string;
     role: string;
-    password?: string; // Optional kiya kyunki Google users ke paas password nahi hota
-    googleId?: string; // Google user identify karne ke liye
-    image?: string;    // Profile picture ke liye (optional)
+    password?: string; 
+    googleId?: string; 
+    image?: string;
 }
 
 const userSchema: Schema<UserInfo> = new Schema({
@@ -17,7 +17,7 @@ const userSchema: Schema<UserInfo> = new Schema({
     email: {
         required: true,
         type: String,
-        unique: true // Taaki ek hi email se do account na bane
+        unique: true
     },
     role: {
         type: String,
@@ -27,7 +27,7 @@ const userSchema: Schema<UserInfo> = new Schema({
     },
     password: {
         type: String,
-        required: false // GOOGLE LOGIN KE LIYE ISE FALSE RAKHNA ZAROORI HAI
+        required: false 
     },
     googleId: {
         type: String,
@@ -37,7 +37,7 @@ const userSchema: Schema<UserInfo> = new Schema({
         type: String,
         required: false
     }
-}, { timestamps: true }); // Timestamps se 'createdAt' automatically mil jayega
+}, { timestamps: true }); 
 
 const userModel: Model<UserInfo> = mongoose.model<UserInfo>("user", userSchema);
 

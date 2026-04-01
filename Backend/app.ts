@@ -11,7 +11,6 @@ import { socketcontroller } from "./socket/Socket_controller.js";
 import roomrouter from "./modules/Room_modules/Room_routes.js"
 import session from "express-session"
 import passport from "passport"
-import jwt from "jsonwebtoken";
 import googleroutes from "./modules/GoogleAuth_modules/Google_route.js"
 import "./config/passport.js"; 
 
@@ -39,7 +38,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-  secret: 'secret_key_kuch_bhi_daal_do',
+  secret: 'dfkgdlkmvdjfgk',
   resave: false,
   saveUninitialized: false, 
   cookie: { 
@@ -54,8 +53,7 @@ mongoconnect();
 socketcontroller(io)
 
 
-const jwtsec : any = process.env.JWT_SECRET
-console.log(jwtsec)
+
 
 app.get("/", (req, res) => {
   res.send("Chat backend running");

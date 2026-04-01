@@ -5,16 +5,17 @@ import jwt from "jsonwebtoken";
 const router = express.Router();
 
 // ─── Google OAuth Initiation ───────────────────────────────────────────────
-router.get(
-  "/auth/google",
-  (req, res, next) => {
-    try {
-      passport.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
-    } catch (err) {
-      next(err);
-    }
+router.get("/auth/google", (req, res, next) => {
+  try {
+    passport.authenticate("google", { scope: ["profile", "email"] })(
+      req,
+      res,
+      next,
+    );
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 // ─── Google OAuth Callback ─────────────────────────────────────────────────
 router.get(
@@ -32,32 +33,42 @@ router.get(
       }
 
       if (!req.user) {
-        res.status(401).json({ success: false, message: "Authentication failed" });
+        res
+          .status(401)
+          .json({ success: false, message: "Authentication failed" });
         return;
       }
 
       const user = req.user as any;
 
       if (!user._id || !user.email) {
-        throw new Error("User object is missing required fields (_id or email)");
+        throw new Error(
+          "User object is missing required fields (_id or email)",
+        );
       }
 
-      const token = jwt.sign(
-        { id: user._id, email: user.email },
-        jwtsec,
-        { expiresIn: "7d" }
-      );
+      const token = jwt.sign({ id: user._id, email: user.email }, jwtsec, {
+        expiresIn: "7d",
+      });
 
       const clientUri = process.env.CLIENT_URI;
       if (!clientUri) {
         throw new Error("CLIENT_URI is not defined in environment variables");
       }
 
-      res.redirect(`${clientUri}/dashboard?token=${token}`);
+      
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, 
+      });
+
+      res.redirect(`${clientUri}/`);
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 // ─── Check Login Success ───────────────────────────────────────────────────
@@ -89,7 +100,5 @@ router.get("/auth/logout", (req, res, next) => {
     res.redirect(redirectUrl);
   });
 });
-
-
 
 export default router;

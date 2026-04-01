@@ -1,33 +1,48 @@
-import {  useState } from "react";
-
-import axios from "axios"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../Api/axios";
 
 export default function LoginModal({ isOpen, onClose }) {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const [email , setEmail] = useState("")
-  const [password , setPassword] = useState("")
-  
-
-  const data = {
-    email : email,
-    password : password
-  }
-
-const handleSubmit = async() => {
-    console.log(data);
-    const res = await axios.post("http://localhost:5000/auth/api/login" , data , Credential)
-    console.log(res)
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
-  if (!isOpen) return null;
-  
 
- 
+  const handleSubmit = async () => {
+    setError("");
+    const { email, password } = form;
+
+    if (!email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.post("/auth/api/login", { email, password }); 
+      onClose(); 
+      navigate("/"); 
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid email or password.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = () => {
-   
     window.open("http://localhost:5000/auth/google", "_self");
   };
 
+  // ✅ close on Escape key
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") onClose();
+  };
 
+  if (!isOpen) return null;
 
   return (
     <>
@@ -38,10 +53,13 @@ const handleSubmit = async() => {
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none"
+        onKeyDown={handleKeyDown}
+      >
         <div className="w-full max-w-sm bg-[#212121] border border-white/10 rounded-2xl p-8 flex flex-col gap-6 shadow-2xl pointer-events-auto">
 
-          {/* Close button & Logo section (Same as before) */}
+          {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center">
@@ -55,6 +73,8 @@ const handleSubmit = async() => {
               </div>
               <span className="text-[#e5e5e5] font-semibold text-sm tracking-widest">INTRACT</span>
             </div>
+
+            {/* ✅ Close button calls onClose */}
             <button
               onClick={onClose}
               className="w-7 h-7 rounded-lg flex items-center justify-center text-[#555] hover:text-[#999] hover:bg-white/5 transition-all duration-150"
@@ -71,8 +91,8 @@ const handleSubmit = async() => {
             <p className="text-[#666] text-sm mt-1">Log in to your account</p>
           </div>
 
-          {/* --- Google Button (IMPLEMENTED) --- */}
-          <button 
+          {/* Google */}
+          <button
             onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl bg-[#2a2a2a] border border-white/10 text-[#d4d4d4] text-sm font-medium hover:bg-[#303030] hover:border-white/20 active:scale-95 transition-all duration-150"
           >
@@ -85,28 +105,53 @@ const handleSubmit = async() => {
             Continue with Google
           </button>
 
-          {/* Divider & Rest of the Form (Same as before) */}
+          {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-white/8" />
             <span className="text-[#444] text-xs">or</span>
             <div className="flex-1 h-px bg-white/8" />
           </div>
 
-          {/* ... Form inputs ... */}
+          {/* Error */}
+          {error && (
+            <div className="px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+              {error}
+            </div>
+          )}
+
+          {/* Fields */}
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[#999] text-xs font-medium">Email address</label>
-              <input value={email} onChange={(e) => setEmail(e.target.value)} name="email" key= {email} type="email" placeholder="john@example.com" className="w-full px-3 py-2.5 rounded-xl bg-[#2a2a2a] border border-white/8 text-[#d4d4d4] text-sm placeholder-[#444] outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 transition-all duration-150" />
+              <input
+                name="email"
+                type="email"
+                placeholder="john@example.com"
+                value={form.email}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-xl bg-[#2a2a2a] border border-white/8 text-[#d4d4d4] text-sm placeholder-[#444] outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 transition-all duration-150"
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[#999] text-xs font-medium">Password</label>
-              <input value={password} onChange={(e) => setPassword(e.target.value)} name= "password" key={password} type="password" placeholder="Abc%1@1" className="w-full px-3 py-2.5 rounded-xl bg-[#2a2a2a] border border-white/8 text-[#d4d4d4] text-sm placeholder-[#444] outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 transition-all duration-150" />
+              <input
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-xl bg-[#2a2a2a] border border-white/8 text-[#d4d4d4] text-sm placeholder-[#444] outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 transition-all duration-150"
+              />
             </div>
-            {/* ... Password field ... */}
           </div>
 
-          <button onClick={handleSubmit} className="w-full py-2.5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-400 active:scale-95 transition-all duration-150 shadow-md shadow-orange-500/15">
-            Log in
+          {/* Submit */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full py-2.5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-400 active:scale-95 transition-all duration-150 shadow-md shadow-orange-500/15 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Logging in..." : "Log in"}
           </button>
 
           <p className="text-[#555] text-sm text-center">

@@ -5,159 +5,154 @@ import { Request, Response } from "express";
 
 const JWT_SEC = process.env.JWT_SECRET;
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict" as const,
+  maxAge: 60 * 60 * 1000,
+};
+
+const signToken = (user: { _id: any; email: string; role: string }) => {
+  const JWT_SEC = process.env.JWT_SECRET;
+
+  if (!JWT_SEC) throw new Error("JWT secret is not configured");
+  return jwt.sign(
+    { id: user._id.toString(), email: user.email, role: user.role },
+    JWT_SEC,
+    { expiresIn: "1h" },
+  );
+};
+
+const userPayload = (user: any) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+});
+
 export const login = async (req: Request, res: Response) => {
   try {
-    console.log("login hit")
+    const JWT_SEC = process.env.JWT_SECRET;
+
     const { email, password } = req.body;
-    console.log(email , password)
-    if (!email || !password) {
+
+    if (!email || !password)
       return res
         .status(400)
-        .json({ message: "either email and password not filled" });
-    }
+        .json({ message: "Email and password are required" });
 
     const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: "invalid email or password" });
-    }
+    if (!user)
+      return res.status(401).json({ message: "Invalid email or password" });
 
-    const userpass: any = user.password;
-    const passwordMatches = await bcrypt.compare(password, userpass);
-    if (!passwordMatches) {
-      return res.status(401).json({ message: "invalid email or password" });
-    }
-
-    const JWT_SEC = process.env.JWT_SECRET;
-    if (!JWT_SEC) {
-      return res.status(500).json({ message: "JWT secret is not configured" });
-    }
-
-    const token = jwt.sign(
-      { id: user._id.toString(), email: user.email, role: user.role },
-      JWT_SEC,
-      { expiresIn: "1h" },
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user.password as string,
     );
+    if (!passwordMatches)
+      return res.status(401).json({ message: "Invalid email or password" });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 60 * 1000,
-    });
+    const token = signToken(user);
+    res.cookie("token", token, COOKIE_OPTIONS);
 
-    return res.status(200).json({
-      message: "login success",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
+    return res
+      .status(200)
+      .json({ message: "Login successful", token, user: userPayload(user) });
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ message: "error in login function" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const signin = async (req: Request, res: Response) => {
   try {
+    const JWT_SEC = process.env.JWT_SECRET;
+
     const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: "name , email , password any of the field is not there",
-      });
-    }
-    const userexist = await userModel.findOne({ email: email });
-    if (userexist) {
-      return res.status(400).json({ message: "user exist " });
-    }
 
-    const hashedpass = await bcrypt.hash(password, 10);
+    if (!name || !email || !password)
+      return res
+        .status(400)
+        .json({ message: "Name, email, and password are required" });
 
-    const user = await userModel.create({
-      name,
-      password: hashedpass,
-      email,
-    });
-    if (!user) {
-      return res.status(400).json({ message: "user not saved" });
-    }
-    return res.status(201).json({ message: "user saved" });
+    const userExists = await userModel.findOne({ email });
+    if (userExists)
+      return res
+        .status(409)
+        .json({ message: "An account with this email already exists" });
+
+    const hashedPass = await bcrypt.hash(password, 10);
+    const user = await userModel.create({ name, email, password: hashedPass });
+
+    // ✅ sign in and set cookie right away — no need to log in again
+    const token = signToken(user);
+    res.cookie("token", token, COOKIE_OPTIONS);
+
+    return res
+      .status(201)
+      .json({ message: "Account created", token, user: userPayload(user) });
   } catch (err) {
-    return res.status(500).json({ message: "error in signin" });
+    console.error("Signin error:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-export const logout = async (req: Request, res: Response) => {
+export const logout = async (_req: Request, res: Response) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     });
-
-    return res.status(200).json({ message: "user logged out" });
+    return res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
     console.error("Logout error:", err);
-    return res.status(500).json({ message: "error in logout" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const forgotpass = async (req: Request, res: Response) => {
   try {
     const { password, confirmpass, email } = req.body;
-    if (!password || !confirmpass) {
+
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    if (!password || !confirmpass)
       return res
         .status(400)
-        .json({ message: "both password and confirm pass is required" });
-    }
-    if (!email) {
-      return res.status(400).json({ message: "email is required" });
-    }
-    if (password !== confirmpass) {
-      return res.status(400).json({ message: "passwords do not match" });
-    }
+        .json({ message: "Password and confirm password are required" });
+
+    if (password !== confirmpass)
+      return res.status(400).json({ message: "Passwords do not match" });
 
     const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "user not found" });
-    }
+    if (!user)
+      return res
+        .status(404)
+        .json({ message: "No account found with this email" });
 
-    const hashedpass = await bcrypt.hash(password, 10);
-    const updatepass = await userModel.findOneAndUpdate(
-      { email },
-      { password: hashedpass },
-      { new: true },
-    );
-    if (!updatepass) {
-      return res.status(400).json({ message: "password not updated" });
-    }
-    return res.status(200).json({ message: "user password updated" });
+    const hashedPass = await bcrypt.hash(password, 10);
+    await userModel.findOneAndUpdate({ email }, { password: hashedPass });
+
+    return res.status(200).json({ message: "Password updated successfully" });
   } catch (err) {
     console.error("Forgot password error:", err);
-    return res.status(500).json({ message: "error in forgotpass" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const getuser = async (req: Request, res: Response) => {
   try {
-    const userid : any = req.user;
+    const reqUser = req.user as { email: string };
 
-    const user = await userModel.findOne({ email: userid.email });
-    if (!user) {
-      return res.status(400).json({ message: "user not found" });
-    }
-    const data = {
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    };
+    const user = await userModel
+      .findOne({ email: reqUser.email })
+      .select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    return res.status(200).send(data);
-
+    return res.status(200).json(userPayload(user));
   } catch (err) {
-    return res.status(500).json({ message: "error in get user" });
+    console.error("Get user error:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
