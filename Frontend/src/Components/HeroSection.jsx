@@ -1,13 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../Api/axios";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { AskName } from "./AskName";
 
 export default function HeroSection() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [roomcode, setRoomcode] = useState("");
   const [message, setMessage] = useState("");
-  const navigate = useNavigate(); 
+  const [showAskName, setShowAskName] = useState(false);
+  const [tempRoomcode, setTempRoomcode] = useState("");
+  const navigate = useNavigate();
+
+  const name = useSelector((store) => store.User.name);
+
+  useEffect(() => {
+    if (name && showAskName && tempRoomcode) {
+      setTimeout(() => {
+        navigate(`/${tempRoomcode}`);
+        setShowAskName(false);
+        setTempRoomcode("");
+      }, 300);
+    }
+  }, [name, showAskName, tempRoomcode, navigate]);
 
   const createRoom = async () => {
     try {
@@ -15,7 +31,9 @@ export default function HeroSection() {
       setLoading(true);
       const { data } = await api.post("/room/api/createroom");
       console.log(data);
-      navigate(`/${data.roomcode}`); 
+      
+      setTempRoomcode(data.roomcode);
+      setShowAskName(true);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create room. Try again.");
     } finally {
@@ -26,17 +44,17 @@ export default function HeroSection() {
   const handlejoinroom = async () => {
     try {
       setError("");
-      
-      // Validate input
+
       if (!roomcode.trim()) {
         setError("Please enter a room code.");
         return;
       }
 
-      const { data, status } = await api.post("/room/api/getroom", { roomcode });
-      
+      const {  status } = await api.post("/room/api/getroom", { roomcode });
+
       if (status === 201 || status === 200) {
-        navigate(`/${roomcode}`);
+        setTempRoomcode(roomcode);
+        setShowAskName(true);
       } else {
         setMessage("Room not found");
         setTimeout(() => {
@@ -49,6 +67,30 @@ export default function HeroSection() {
     }
   };
 
+  if (showAskName) {
+    return (
+      <>
+        <section className="min-h-screen bg-[#1a1a1a] flex items-center justify-center px-6">
+          <div className="flex flex-col items-center text-center gap-7 max-w-lg w-full blur-sm pointer-events-none">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+              <span className="text-orange-400 text-xs font-medium tracking-widest">VIDEO · COLLAB · AI</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              <h1 className="text-5xl sm:text-6xl font-bold text-[#e8e8e8] leading-[1.1] tracking-tight">
+                Meet without
+                <br />
+                <span className="text-orange-400">boundaries.</span>
+              </h1>
+            </div>
+          </div>
+        </section>
+
+        <AskName />
+      </>
+    );
+  }
+
   return (
     <section className="min-h-screen bg-[#1a1a1a] flex items-center justify-center px-6">
       <div className="flex flex-col items-center text-center gap-7 max-w-lg w-full">
@@ -59,13 +101,11 @@ export default function HeroSection() {
           </div>
         )}
 
-        {/* Eyebrow tag */}
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
           <span className="text-orange-400 text-xs font-medium tracking-widest">VIDEO · COLLAB · AI</span>
         </div>
 
-        {/* Heading */}
         <div className="flex flex-col gap-3">
           <h1 className="text-5xl sm:text-6xl font-bold text-[#e8e8e8] leading-[1.1] tracking-tight">
             Meet without
@@ -77,14 +117,12 @@ export default function HeroSection() {
           </p>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs w-full max-w-xs">
             {error}
           </div>
         )}
 
-        {/* Start Instant Meeting Button */}
         <button
           onClick={createRoom}
           disabled={loading}
@@ -97,14 +135,12 @@ export default function HeroSection() {
           {loading ? "Creating..." : "Start Instant Meeting"}
         </button>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 w-full max-w-xs">
           <div className="flex-1 h-px bg-white/8" />
           <span className="text-[#444] text-xs tracking-widest">OR</span>
           <div className="flex-1 h-px bg-white/8" />
         </div>
 
-        {/* Join Meeting Input */}
         <div className="flex items-center w-full max-w-xs rounded-xl bg-[#242424] border border-white/8 overflow-hidden focus-within:border-orange-500/40 focus-within:ring-1 focus-within:ring-orange-500/20 transition-all duration-150">
           <div className="flex items-center gap-2 flex-1 px-4 py-3">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-[#555] shrink-0">
@@ -129,10 +165,8 @@ export default function HeroSection() {
           </button>
         </div>
 
-        {/* Bottom note */}
         <p className="text-[#444] text-xs">No account needed to join a meeting.</p>
 
-        {/* Stats row */}
         <div className="flex items-center gap-8 pt-2 border-t border-white/8 w-full max-w-xs justify-center">
           {[
             { value: "HD", label: "Video Quality" },

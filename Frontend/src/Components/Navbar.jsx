@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import LoginModal from "./Loginmodal";
 import { useNavigate } from "react-router-dom";
 import api from "../Api/axios";
+import { useDispatch , useSelector } from "react-redux";
+import { setName } from "../Redux/Features/UserSlice";
+
 
 export default function Navbar() {
   const [loginOpen, setLoginOpen] = useState(false);
@@ -9,11 +12,15 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch()
+
 
   useEffect(() => {
     const getUser = async () => {
       try {
         const { data } = await api.get("/auth/api/me");
+        console.log(data.name)
+        dispatch(setName(data.name))
         setUser(data);
       } catch {
         setUser(null);
@@ -22,6 +29,7 @@ export default function Navbar() {
     getUser();
   }, [loginOpen]);
 
+  const name = useSelector((store) => store.User.name)
   // close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -87,7 +95,7 @@ export default function Navbar() {
                   {initials}
                 </div>
               )}
-              <span className="text-[#d4d4d4] text-sm font-medium">{user.name?.split(" ")[0]}</span>
+              <span className="text-[#d4d4d4] text-sm font-medium">{name?.split(" ")[0]}</span>
               {/* Chevron */}
               <svg
                 width="12" height="12" viewBox="0 0 12 12" fill="none"

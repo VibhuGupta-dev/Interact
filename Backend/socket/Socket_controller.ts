@@ -8,8 +8,9 @@ export function socketcontroller (io : any)  {
       console.log("USER CONNECTED:", socket.id);
       
       socket.on("get-code" , (data : any) => {
-        
+        console.log(data)
         socket.Roomcode = data.roomcode 
+        socket.name = data.name
         console.log(socket)
       
        
