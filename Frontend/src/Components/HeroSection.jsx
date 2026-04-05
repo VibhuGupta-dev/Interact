@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import api from "../Api/axios";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector , useDispatch } from "react-redux";
 import { AskName } from "./AskName";
+import { setRole } from "../Redux/Features/UserSlice";
+
 
 export default function HeroSection() {
   const [error, setError] = useState("");
@@ -11,6 +13,7 @@ export default function HeroSection() {
   const [message, setMessage] = useState("");
   const [showAskName, setShowAskName] = useState(false);
   const [tempRoomcode, setTempRoomcode] = useState("");
+  const dispatch = useDispatch()
   const navigate = useNavigate();
 
   const name = useSelector((store) => store.User.name);
@@ -31,15 +34,18 @@ export default function HeroSection() {
       setLoading(true);
       const { data } = await api.post("/room/api/createroom");
       console.log(data);
-      
+      if(data.isActive == true) {
+        dispatch(setRole("Owner"))
+      }
       setTempRoomcode(data.roomcode);
-      setShowAskName(true);
+      navigate(`/${data.roomcode}`)
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create room. Try again.");
     } finally {
       setLoading(false);
     }
   };
+const role = useSelector((store) => {store.User.role})
 
   const handlejoinroom = async () => {
     try {
