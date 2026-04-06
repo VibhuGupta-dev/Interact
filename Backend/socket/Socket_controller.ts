@@ -9,8 +9,9 @@ export function socketcontroller(io: any) {
       socket.roomcode = data.roomcode;
       socket.name = data.name;
       socket.role = data.role;
+      socket.userId = socket.id;
 
-      
+      // ✅ Owner ko notification bhejo
       io.to(`Owner-${socket.roomcode}`).emit("newjoinreq", {
         name: socket.name,
         message: `${socket.name} wants to join the room`,
@@ -30,7 +31,7 @@ export function socketcontroller(io: any) {
     socket.on("acceptJoinRequest", (data: any) => {
       console.log("Accept join:", data);
       
-      // ✅ Accept emit karo
+      // ✅ Accept emit karo specific user ko
       io.to(data.userId).emit("requestAccepted", {
         name: data.name,
         roomcode: data.roomcode,
@@ -43,16 +44,20 @@ export function socketcontroller(io: any) {
       const targetSocket = io.sockets.sockets.get(data.userId);
       if (targetSocket) {
         targetSocket.join(data.roomcode);
+        console.log("User joined room:", data.userId, "Room:", data.roomcode);
         
-        // ✅ Sabko notify karo
+        // ✅ Sabko room mein notify karo
         io.to(data.roomcode).emit("userJoined", {
           name: data.name,
           userId: data.userId,
         });
+      } else {
+        console.log("Target socket not found for userId:", data.userId);
       }
     });
 
     socket.on("rejectJoinRequest", (data: any) => {
+      console.log("Reject join:", data);
       io.to(data.userId).emit("requestRejected", {
         roomcode: data.roomcode,
         userId: data.userId,
@@ -64,7 +69,7 @@ export function socketcontroller(io: any) {
       console.log("User disconnected:", socket.id, reason);
 
       if (socket.roomcode) {
-       
+      
         io.to(socket.roomcode).emit("userLeft", {
           userId: socket.id,
           name: socket.name,

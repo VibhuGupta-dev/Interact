@@ -17,7 +17,7 @@ export const Createroom = async (req: Request, res: Response) => {
     const room = await Room.create({
       roomcode,
       host: user._id,
-      participants: [{ user: user._id }],
+   
     });
 
     return res.status(201).json(room);
@@ -46,3 +46,35 @@ export const getroom = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "error in get room" });
   }
 };
+
+export const checkownerroom = async (req : Request , res : Response) => {
+  try {
+    console.log("hey")
+      const userid =req.user.id
+      if(!userid) {
+        return res.status(400).json({message : " userid not found"})
+      }
+      
+      const {roomcode} = req.body
+      console.log(roomcode)
+      if(!roomcode) {
+        return res.status(400).json({message : "roomcode not enter"})
+      }
+
+      const findroom = await Room.findOne({roomcode : roomcode})
+      console.log(findroom)
+      if(!findroom) {
+        return res.status(400).json({message :  " room code not found"})
+      }
+
+      const roomowner = findroom.host
+      console.log(roomowner)
+      if(roomowner == userid){
+        return res.status(201).json({message : "owner of the room wants to join the meeting"})
+      }
+
+     
+  }catch(err) {
+return res.status(500).json({ message: "error in check room room" });
+  }
+}

@@ -32,24 +32,7 @@ const roomSchema = new Schema<IRoom>({
     required: true,
   },
 
-  participants: [
-    {
-      user: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        require:true
-      },
-      isMuted: {
-        type: Boolean,
-        default: false,
-      },
-      isVideoOn: {
-        type: Boolean,
-        default: true,
-      },
-      
-    },
-  ],
+ 
 
   chat: [
     {

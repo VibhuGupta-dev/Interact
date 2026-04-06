@@ -3,7 +3,7 @@ import LoginModal from "./Loginmodal";
 import { useNavigate } from "react-router-dom";
 import api from "../Api/axios";
 import { useDispatch , useSelector } from "react-redux";
-import { setName } from "../Redux/Features/UserSlice";
+import { setName , setUserId } from "../Redux/Features/UserSlice";
 
 
 export default function Navbar() {
@@ -13,13 +13,14 @@ export default function Navbar() {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const dispatch = useDispatch()
-
+  
 
   useEffect(() => {
     const getUser = async () => {
       try {
         const { data } = await api.get("/auth/api/me");
-        console.log(data.name)
+        console.log(data.id)
+        dispatch(setUserId(data.id))
         dispatch(setName(data.name))
         setUser(data);
       } catch {

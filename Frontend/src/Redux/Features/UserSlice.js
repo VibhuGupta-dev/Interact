@@ -9,6 +9,7 @@ const userSlice = createSlice({
     roomcode: "",
     role: "user",
     userrequest: null, // ✅ "null" string ke bajaye null rakh (bug tha)
+    userId : null
   },
   reducers: {
     setName(state, action) {
@@ -30,7 +31,9 @@ const userSlice = createSlice({
     setUserrequest(state, action) {
       state.userrequest = action.payload;
     },
-    // ✅ NEW - Clear user on disconnect/logout
+    setUserId(state , action) {
+      state.userId = action.payload
+    },
     clearUser(state) {
       state.name = "";
       state.loading = false;
@@ -38,6 +41,7 @@ const userSlice = createSlice({
       state.roomcode = "";
       state.role = "user";
       state.userrequest = null;
+      
     },
   },
 });
@@ -49,7 +53,8 @@ export const {
   setRoomcode, 
   setRole, 
   setUserrequest,
-  clearUser // ✅ Export karo
+  clearUser ,
+  setUserId
 } = userSlice.actions;
 
 export default userSlice.reducer;
