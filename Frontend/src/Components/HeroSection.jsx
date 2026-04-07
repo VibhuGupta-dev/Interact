@@ -50,9 +50,10 @@ export default function HeroSection() {
   const role = useSelector((store) => {
     store.User.role;
   });
-
-  const handlejoinroom = async () => {
+console.log(role)
+  const handlejoinroom = async (e) => {
     try {
+      e.preventDefault();
       if(userid != null) {
 setError("");
 
@@ -70,10 +71,8 @@ setError("");
         setTempRoomcode(roomcode);
         setShowAskName(true);
       }
-      }
-      
-
-      const { status } = await api.post("/room/api/getroom", { roomcode });
+      }else { 
+ const { status } = await api.post("/room/api/getroom", { roomcode });
 
       if (status === 201 || status === 200) {
         setTempRoomcode(roomcode);
@@ -84,6 +83,10 @@ setError("");
           setMessage("");
         }, 3000);
       }
+      }
+      
+
+     
     } catch (err) {
       const errorMsg =
         err.response?.data?.message || "Failed to join room. Try again.";
@@ -129,7 +132,7 @@ setError("");
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
           <span className="text-orange-400 text-xs font-medium tracking-widest">
-            VIDEO · COLLAB · AI
+            Meet And Call
           </span>
         </div>
 

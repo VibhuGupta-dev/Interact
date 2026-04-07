@@ -1,16 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { clearUser } from "../Redux/Features/UserSlice";
+import { useNavigate, useParams } from "react-router-dom";
+import { clearUser, setRoomcode } from "../Redux/Features/UserSlice";
 import { Chat } from "../Components/Chat";
+import { copyToClipboard } from "../Api/copytoclipboard";
+import { PermissionScreen } from "../Components/Permission";
+import { createSocket } from "../Api/ws";
 
 export function MainScreen() {
-  const [showRequests, setShowRequests] = useState(false);
-  const [requestsAnimation, setRequestsAnimation] = useState(false);
-  const chatRef = useRef(null);
-  const [requests, setRequests] = useState([]);
-  const [processingId, setProcessingId] = useState(null);
-  
+  const { roomcode: urlRoomCode } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
@@ -18,41 +16,71 @@ export function MainScreen() {
   const room = useSelector((store) => store.User.roomcode);
   const name = useSelector((store) => store.User.name);
 
-  const handleNewJoinRequest = (data) => {
-    setRequests((prev) => [...prev, data]);
-    setRequestsAnimation(true);
-    setTimeout(() => setRequestsAnimation(false), 600);
-  };
+  const [socket, setSocket] = useState(null);
+  const [showChat, setShowChat] = useState(false);
+  const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false); // Sidebar control
+  const [requests, setRequests] = useState([]);
+  const [processingId, setProcessingId] = useState(null);
+  const [copycomponent, setCopycomponent] = useState(false);
+  const [copy, setCopy] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
+  const [requestsAnimation, setRequestsAnimation] = useState(false);
 
-  const handleRequestAccepted = (data) => {
-    console.log("Request accepted", data);
-  };
+  useEffect(() => {
+    if (!name) {
+      navigate("/");
+      return;
+    }
+    const newSocket = createSocket();
+    setSocket(newSocket);
+    dispatch(setRoomcode(urlRoomCode));
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [name, urlRoomCode, dispatch, navigate]);
 
-  const handleUserJoined = (data) => {
-    console.log("User joined:", data);
-  };
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("connect", () => {
+      if (role === "Owner") {
+        socket.emit("owner-join", { roomcode: urlRoomCode, name, role });
+        setShowChat(true);
+      } else {
+        socket.emit("user-join-request", { roomcode: urlRoomCode, name, role });
+      }
+    });
 
-  const handleUserLeft = (data) => {
-    console.log("User left:", data);
-  };
+    socket.on("newjoinreq", (data) => {
+      setRequests((prev) => [...prev, data]);
+      setRequestsAnimation(true);
+      setTimeout(() => setRequestsAnimation(false), 600);
+    });
 
-  const handleRequestRejected = (data) => {
-    dispatch(clearUser());
-    navigate("/");
-  };
+    socket.on("requestAccepted", () => {
+      setShowChat(true);
+    });
+
+    socket.on("requestRejected", () => {
+      dispatch(clearUser());
+      navigate("/");
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("newjoinreq");
+      socket.off("requestAccepted");
+      socket.off("requestRejected");
+    };
+  }, [socket, role, urlRoomCode, name, navigate, dispatch]);
 
   const handleAccept = (request) => {
-    if (!request || !chatRef.current?.socket || processingId) return;
-    
+    if (!request || !socket || processingId) return;
     setProcessingId(request.userId);
-
-    chatRef.current.socket.emit("acceptJoinRequest", {
+    socket.emit("acceptJoinRequest", {
       roomcode: room,
       userId: request.userId,
       name: request.name,
-      role: "member",
     });
-
     setTimeout(() => {
       setRequests((prev) => prev.filter((req) => req.userId !== request.userId));
       setProcessingId(null);
@@ -60,235 +88,127 @@ export function MainScreen() {
   };
 
   const handleReject = (request) => {
-    if (!request || !chatRef.current?.socket || processingId) return;
-    
+    if (!request || !socket || processingId) return;
     setProcessingId(request.userId);
-
-    chatRef.current.socket.emit("rejectJoinRequest", {
+    socket.emit("rejectJoinRequest", {
       roomcode: room,
       userId: request.userId,
     });
-
     setTimeout(() => {
       setRequests((prev) => prev.filter((req) => req.userId !== request.userId));
       setProcessingId(null);
     }, 500);
   };
 
-  return (
-    <div className="min-h-screen bg-[#1a1a1a] text-[#e8e8e8]">
-      {/* Top Navbar */}
-      <nav className="sticky top-0 z-50 bg-[#1a1a1a]/80 border-b border-white/8 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto py-4 flex items-center justify-end">
-          {/* Left - Logo/Room Info */}
-          
+  const handlecopybutton = () => {
+    copyToClipboard(room);
+    setCopy(true);
+    setTimeout(() => setCopy(false), 2000);
+  };
 
-          {/* Right - User Info & Notification */}
-          <div className="flex items-center gap-8">
-            {/* User Status */}
-            <div className="hidden md:flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 border border-white/8">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">{name?.charAt(0).toUpperCase()}</span>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-[#e8e8e8]">{name}</p>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
-                  <p className="text-xs text-[#555] capitalize">{role}</p>
-                </div>
+  useEffect(() => {
+    setCopycomponent(true);
+    const timer = setTimeout(() => setCopycomponent(false), 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (role === "user" && !showChat) {
+    return <PermissionScreen name={name} room={room} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#1a1a1a] text-[#e8e8e8] flex flex-col overflow-hidden">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-[#1a1a1a]/80 border-b border-white/8 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto py-4 px-6 flex items-center justify-between">
+          <div className="text-orange-500 font-bold italic">VIBE ROOM</div>
+          
+          <div className="flex items-center gap-4">
+            {/* Chat Toggle Button */}
+            <button 
+              onClick={() => setIsChatSidebarOpen(!isChatSidebarOpen)}
+              className={`p-2.5 rounded-lg transition-all border ${isChatSidebarOpen ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 border border-white/8">
+              <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-white uppercase">{name?.charAt(0)}</div>
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-semibold">{name}</p>
+                <p className="text-[10px] text-gray-500 uppercase">{role}</p>
               </div>
             </div>
 
-            {/* Notification Bell - Always Visible */}
             {role === "Owner" && (
-              <button
-                onClick={() => setShowRequests(!showRequests)}
-                className="relative group/bell p-2.5 rounded-lg hover:bg-white/5 transition-all duration-300"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={`text-[#999] group-hover/bell:text-orange-400 transition-all duration-300 ${requestsAnimation ? 'animate-bounce' : ''}`}
-                >
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              <button onClick={() => setShowRequests(!showRequests)} className="relative p-2.5 rounded-lg hover:bg-white/5 transition-all">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={requestsAnimation ? 'animate-bounce text-orange-400' : 'text-[#999]'}>
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-
-                {/* Badge with animation */}
-                {requests.length > 0 && (
-                  <div className="absolute -top-1 -right-1 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-orange-500 rounded-full animate-ping opacity-75"></div>
-                    <div className="relative min-w-6 h-6 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 border-2 border-[#1a1a1a] flex items-center justify-center font-bold text-xs text-white shadow-lg shadow-orange-500/20">
-                      {requests.length > 99 ? "99+" : requests.length}
-                    </div>
-                  </div>
-                )}
+                {requests.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full text-[10px] flex items-center justify-center border-2 border-[#1a1a1a]">{requests.length}</span>}
               </button>
             )}
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="relative max-w-7xl mx-auto px-8 py-8">
-        <Chat 
-          ref={chatRef}
-          onNewJoinRequest={handleNewJoinRequest}
-          onRequestAccepted={handleRequestAccepted}
-          onUserJoined={handleUserJoined}
-          onUserLeft={handleUserLeft}
-          onRequestRejected={handleRequestRejected}
-        />
+      {/* Main Container with Sidebar Layout */}
+      <div className="flex flex-1 relative overflow-hidden">
+        
+        {/* Left Side: Video/Main Content Area */}
+        <div className={`flex-1 transition-all duration-300 p-8 ${isChatSidebarOpen ? 'mr-0' : ''}`}>
+           <div className="w-full h-full rounded-3xl bg-white/5 border border-white/5 flex items-center justify-center border-dashed">
+              <p className="text-gray-500 italic">Main Content Area (Video or Stream)</p>
+           </div>
+        </div>
+
+        {/* Right Side: Chat Sidebar */}
+        <div className={`transition-all duration-300 border-l border-white/10 bg-[#1e1e1e] ${isChatSidebarOpen ? 'w-[350px] translate-x-0' : 'w-0 translate-x-full'}`}>
+          {isChatSidebarOpen && (
+            <Chat socket={socket} name={name} room={room} role={role} />
+          )}
+        </div>
       </div>
 
-      {/* Requests Modal - Premium Style */}
+      {/* Requests Modal (Owner Only) */}
       {role === "Owner" && showRequests && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-md transition-all duration-300" 
-          onClick={() => setShowRequests(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-28 right-8 w-full max-w-md bg-[#242424] rounded-2xl shadow-2xl border border-white/8 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300"
-          >
-            {/* Header */}
-            <div className="bg-[#1a1a1a] border-b border-white/8 px-6 py-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-400">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold text-[#e8e8e8]">Join Requests</h2>
-                    {requests.length > 0 && (
-                      <p className="text-xs text-[#555] mt-0.5">{requests.length} pending approval</p>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowRequests(false)}
-                  className="p-1.5 hover:bg-white/5 rounded-lg transition-colors duration-200"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#666]">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
+        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-md" onClick={() => setShowRequests(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="absolute top-24 right-8 w-full max-w-md bg-[#242424] rounded-2xl shadow-2xl border border-white/8 overflow-hidden">
+            {/* ... requests logic remains same ... */}
+            <div className="bg-[#1a1a1a] border-b border-white/8 px-6 py-4 flex justify-between items-center">
+               <h2 className="text-sm font-bold uppercase text-orange-500">Join Requests</h2>
+               <button onClick={() => setShowRequests(false)}>✕</button>
             </div>
-
-            {/* Content */}
-            <div className="max-h-[500px] overflow-y-auto">
-              {requests.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 px-6">
-                  <div className="p-4 bg-white/5 rounded-full mb-4 border border-white/8">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#555]">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </div>
-                  <p className="text-[#777] text-sm font-medium">No pending requests</p>
-                  <p className="text-[#555] text-xs mt-2">Requests will appear here</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-white/5">
-                  {requests.map((req, index) => (
-                    <div
-                      key={req.userId}
-                      className={`p-4 hover:bg-white/3 transition-all duration-300 group ${processingId === req.userId ? 'opacity-50' : ''}`}
-                    >
-                      {/* Request Header */}
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center font-bold text-xs text-white shadow-md shadow-orange-500/20">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-[#e8e8e8] text-sm truncate">
-                              {req.name}
-                            </p>
-                            <span className="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-xs rounded-full border border-orange-500/20">
-                              new
-                            </span>
-                          </div>
-                          <p className="text-xs text-[#777] mt-1">
-                            wants to join the room
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Meta Info */}
-                      <div className="ml-11 mb-3">
-                        <p className="text-xs text-[#555] font-mono bg-white/3 px-2.5 py-1.5 rounded-md inline-block border border-white/5">
-                          {req.userId?.substring(0, 12)}...
-                        </p>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 ml-11">
-                        <button
-                          onClick={() => handleAccept(req)}
-                          disabled={processingId !== null}
-                          className="flex-1 px-3 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-green-600/50 disabled:to-emerald-600/50 text-white text-xs font-semibold rounded-lg transition-all duration-200 active:scale-95 shadow-lg hover:shadow-green-500/30 disabled:cursor-not-allowed flex items-center justify-center gap-2 border border-green-500/20"
-                        >
-                          {processingId === req.userId ? (
-                            <>
-                              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                              <span>Processing</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>✓</span>
-                              <span>Accept</span>
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleReject(req)}
-                          disabled={processingId !== null}
-                          className="flex-1 px-3 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:from-red-600/50 disabled:to-rose-600/50 text-white text-xs font-semibold rounded-lg transition-all duration-200 active:scale-95 shadow-lg hover:shadow-red-500/30 disabled:cursor-not-allowed flex items-center justify-center gap-2 border border-red-500/20"
-                        >
-                          {processingId === req.userId ? (
-                            <>
-                              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                              <span>Processing</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>✕</span>
-                              <span>Reject</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
+            <div className="max-h-[400px] overflow-y-auto p-4 space-y-3">
+               {requests.length === 0 ? <p className="text-center py-10 text-gray-500 text-xs italic">No requests</p> : 
+                requests.map(req => (
+                  <div key={req.userId} className="p-4 bg-white/5 rounded-xl flex items-center justify-between">
+                    <p className="text-sm font-medium">{req.name}</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleAccept(req)} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs">Accept</button>
+                      <button onClick={() => handleReject(req)} className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs">Reject</button>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))
+               }
             </div>
-
-            {/* Footer */}
-            {requests.length > 0 && (
-              <div className="bg-[#1a1a1a] border-t border-white/8 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
-                  <span className="text-xs text-[#777]">
-                    <span className="font-semibold text-[#999]">{requests.length}</span> request{requests.length !== 1 ? 's' : ''} waiting
-                  </span>
-                </div>
-                <span className="text-xs text-[#555]">Review pending approvals</span>
-              </div>
-            )}
           </div>
         </div>
       )}
+
+      {/* Footer (Copy Room Code) */}
+      <footer className="fixed bottom-4 left-4 z-50"> 
+        {role === "Owner" && copycomponent && (
+          <div className="flex items-center gap-3 bg-[#242424] rounded-2xl p-4 border border-orange-500/30 shadow-2xl">
+            <input className="px-4 py-2 bg-black/20 text-white rounded-md text-xs font-mono w-48 border border-white/5" type="text" value={room} readOnly />
+            <button onClick={handlecopybutton} className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-md transition-all">
+              {copy ? "Copied!" : "Copy"}
+            </button>
+          </div>
+        )}
+      </footer>
     </div>
   );
 }
