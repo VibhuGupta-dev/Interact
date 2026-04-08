@@ -1,80 +1,103 @@
+const roomUsers: Record<
+  string,
+  { name: string; role: string; userId: string }[]
+> = {};
+
 export function socketcontroller(io: any) {
   console.log("socket setup");
 
   io.on("connection", (socket: any) => {
     console.log("USER CONNECTED:", socket.id);
 
-    socket.on("user-join-request", (data: any) => {
-      console.log("Join request from:", data);
-      socket.roomcode = data.roomcode;
-      socket.name = data.name;
-      socket.role = data.role;
-      socket.userId = socket.id;
-
-      // ✅ Owner ko notification bhejo
-      io.to(`Owner-${socket.roomcode}`).emit("newjoinreq", {
-        name: socket.name,
-        message: `${socket.name} wants to join the room`,
-        userId: socket.id,
-      });
-    });
-
     socket.on("owner-join", (data: any) => {
       socket.join(`Owner-${data.roomcode}`);
+      socket.join(data.roomcode);
       socket.name = data.name;
-      socket.ownerid = data.ownerid;
       socket.roomcode = data.roomcode;
       socket.role = data.role;
-      console.log("Owner joined:", socket.id);
+
+      if (!roomUsers[data.roomcode]) {
+        roomUsers[data.roomcode] = [];
+      }
+
+      const alreadyExists = roomUsers[data.roomcode].find(
+        (u) => u.userId === socket.id,
+      );
+      if (!alreadyExists) {
+        roomUsers[data.roomcode].push({
+          name: data.name,
+          role: data.role,
+          userId: socket.id,
+        });
+      }
+
+      io.to(data.roomcode).emit("users-update", roomUsers[data.roomcode]);
+      console.log("Owner joined:", socket.id, roomUsers[data.roomcode]);
+    });
+
+    socket.on("user-join-request", (data: any) => {
+      socket.roomcode = data.roomcode;
+      socket.name = data.name;
+      socket.role = data.role;
+
+      io.to(`Owner-${data.roomcode}`).emit("newjoinreq", {
+        name: data.name,
+        userId: socket.id,
+        role: data.role,
+        message: `${data.name} wants to join`,
+      });
     });
 
     socket.on("acceptJoinRequest", (data: any) => {
-      console.log("Accept join:", data);
-      
-      // ✅ Accept emit karo specific user ko
-      io.to(data.userId).emit("requestAccepted", {
-        name: data.name,
-        roomcode: data.roomcode,
-        role: data.role,
-        message: `Your join request approved!`,
-        userId: data.userId,
-      });
-
-      // ✅ User ko room mein add karo
       const targetSocket = io.sockets.sockets.get(data.userId);
+
       if (targetSocket) {
         targetSocket.join(data.roomcode);
-        console.log("User joined room:", data.userId, "Room:", data.roomcode);
-        
-        // ✅ Sabko room mein notify karo
-        io.to(data.roomcode).emit("userJoined", {
-          name: data.name,
-          userId: data.userId,
-        });
+
+        if (!roomUsers[data.roomcode]) roomUsers[data.roomcode] = [];
+
+        const alreadyExists = roomUsers[data.roomcode].find(
+          (u) => u.userId === data.userId,
+        );
+        if (!alreadyExists) {
+          roomUsers[data.roomcode].push({
+            name: data.name,
+            role: data.role,
+            userId: data.userId,
+          });
+        }
+
+        io.to(data.userId).emit("requestAccepted");
+
+        io.to(data.roomcode).emit("users-update", roomUsers[data.roomcode]);
+
+        console.log("User accepted:", data.name, roomUsers[data.roomcode]);
       } else {
-        console.log("Target socket not found for userId:", data.userId);
+        console.log("Socket not found:", data.userId);
       }
     });
 
     socket.on("rejectJoinRequest", (data: any) => {
-      console.log("Reject join:", data);
-      io.to(data.userId).emit("requestRejected", {
-        roomcode: data.roomcode,
-        userId: data.userId,
-        message: `Your join request was rejected`,
-      });
+      io.to(data.userId).emit("requestRejected");
     });
 
     socket.on("disconnect", (reason: any) => {
-      console.log("User disconnected:", socket.id, reason);
+      console.log("Disconnected:", socket.id, reason);
 
-      if (socket.roomcode) {
-      
+      if (socket.roomcode && roomUsers[socket.roomcode]) {
+        roomUsers[socket.roomcode] = roomUsers[socket.roomcode].filter(
+          (u) => u.userId !== socket.id,
+        );
+
+        io.to(socket.roomcode).emit("users-update", roomUsers[socket.roomcode]);
         io.to(socket.roomcode).emit("userLeft", {
-          userId: socket.id,
           name: socket.name,
-          message: `${socket.name} left the room`,
+          userId: socket.id,
         });
+
+        if (roomUsers[socket.roomcode].length === 0) {
+          delete roomUsers[socket.roomcode];
+        }
       }
     });
   });

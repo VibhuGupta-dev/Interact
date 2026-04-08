@@ -17,7 +17,7 @@ export default function HeroSection() {
 
   const name = useSelector((store) => store.User.name);
   const userid = useSelector((store) => store.User.userId);
-  console.log(userid);
+
   useEffect(() => {
     if (name && showAskName && tempRoomcode) {
       setTimeout(() => {
@@ -50,7 +50,7 @@ export default function HeroSection() {
   const role = useSelector((store) => {
     store.User.role;
   });
-console.log(role)
+
   const handlejoinroom = async (e) => {
     try {
       e.preventDefault();

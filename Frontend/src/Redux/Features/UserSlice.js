@@ -8,8 +8,9 @@ const userSlice = createSlice({
     error: null,
     roomcode: "",
     role: "user",
-    userrequest: null, // ✅ "null" string ke bajaye null rakh (bug tha)
-    userId : null
+    userrequest: null,
+    userId: null,
+    users: [],
   },
   reducers: {
     setName(state, action) {
@@ -31,8 +32,11 @@ const userSlice = createSlice({
     setUserrequest(state, action) {
       state.userrequest = action.payload;
     },
-    setUserId(state , action) {
-      state.userId = action.payload
+    setUserId(state, action) {
+      state.userId = action.payload;
+    },
+    setUsers(state, action) {
+      state.users = action.payload; 
     },
     clearUser(state) {
       state.name = "";
@@ -41,20 +45,22 @@ const userSlice = createSlice({
       state.roomcode = "";
       state.role = "user";
       state.userrequest = null;
-      
+      state.userId = null;
+      state.users = [];
     },
   },
 });
 
-export const { 
-  setName, 
-  setLoading, 
-  setError, 
-  setRoomcode, 
-  setRole, 
+export const {
+  setName,
+  setLoading,
+  setError,
+  setRoomcode,
+  setRole,
   setUserrequest,
-  clearUser ,
-  setUserId
+  clearUser,
+  setUserId,
+  setUsers,
 } = userSlice.actions;
 
 export default userSlice.reducer;
