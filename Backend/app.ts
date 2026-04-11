@@ -13,11 +13,14 @@ import session from "express-session"
 import passport from "passport"
 import googleroutes from "./modules/GoogleAuth_modules/Google_route.js"
 import "./config/passport.js"; 
+import { initChatServices } from "./modules/Room_modules/Room_controller.js";
 
-
+const host = process.env.HOST
+const port = process.env.PORT_REDIS
+const password = process.env.PASSWORD
 const app = express();
 const CLIENT_URI = process.env.CLIENT_URI
-
+import Redis from "ioredis";
 export const server = http.createServer(app); 
 
 export const io : any= new Server(server, {
@@ -31,6 +34,24 @@ app.use(cors({
   methods: "GET,POST,PUT,DELETE",
   credentials: true, 
 }));
+
+export const redis: any = new Redis({
+  host: host,
+  port: parseInt(port!),
+  password: password
+});
+
+// ✅ Bilkul alag instance
+export const subscriber: any = new Redis({
+  host: host,
+  port: parseInt(port!),
+  password: password
+});
+
+redis.on("connect", async () => {
+  console.log("redis connected");
+  await initChatServices();
+});
 
 
 app.use(express.json());

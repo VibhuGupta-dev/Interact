@@ -2,6 +2,7 @@ const roomUsers: Record<
   string,
   { name: string; role: string; userId: string }[]
 > = {};
+import { Room } from "../modules/Room_modules/Room_model.js";
 
 export function socketcontroller(io: any) {
   console.log("socket setup");
@@ -80,7 +81,15 @@ export function socketcontroller(io: any) {
     socket.on("rejectJoinRequest", (data: any) => {
       io.to(data.userId).emit("requestRejected");
     });
-
+     
+socket.on("send-message", (data: any) => {
+  io.to(data.room).emit("receive-message", {
+    name: data.name,
+    room: data.room,
+    text: data.text,
+    time: data.time,
+  });
+});
     socket.on("disconnect", (reason: any) => {
       console.log("Disconnected:", socket.id, reason);
 

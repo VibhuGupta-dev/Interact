@@ -10,10 +10,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { clearUser } from "../Redux/Features/UserSlice";
 import { getSocket } from "../Api/ws";
+import api from "../Api/axios";
 
 export const Chat = forwardRef(function Chat(
   { onNewJoinRequest, onUserJoined, onUserLeft },
-  ref
+  ref,
 ) {
   const [statusMessage, setStatusMessage] = useState("");
   const [newMessage, setNewMessage] = useState("");
@@ -37,8 +38,7 @@ export const Chat = forwardRef(function Chat(
   // ✅ AUTO SCROLL FIX (reliable)
   useLayoutEffect(() => {
     if (containerRef.current) {
-      containerRef.current.scrollTop =
-        containerRef.current.scrollHeight;
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -89,11 +89,12 @@ export const Chat = forwardRef(function Chat(
     };
 
     const handleReceiveMessage = (data) => {
-      setMessages((prev) => [
-        ...prev,
-        { ...data, isSelf: data.name === name },
-      ]);
+      console.log("ff"  ,data)
+      if (data.name === name) return;
+      setMessages((prev) => [...prev, { ...data, isSelf: data.name === name }]);
     };
+
+  
 
     socket.on("newjoinreq", handleNewJoinReq);
     socket.on("userJoined", handleUserJoined);
@@ -108,8 +109,20 @@ export const Chat = forwardRef(function Chat(
     };
   }, [name, onNewJoinRequest, onUserJoined, onUserLeft]);
 
+  useEffect(() => {
+  const fetchChats = async () => {
+    const data = await api.get(`/room/api/getchat/${room}`)
+    const chats = data.data.chat
+    console.log("data" ,data)
+    setMessages(chats.map((msg) => ({  // ✅ : any hata do
+      ...msg,
+      isSelf: msg.name === name
+    })))
+  }
+  fetchChats()
+}, [])
   // send message
-  const handleSend = () => {
+  const handleSend = async() => {
     const socket = getSocket();
     if (!newMessage.trim() || !socket) return;
 
@@ -121,18 +134,19 @@ export const Chat = forwardRef(function Chat(
     const msgData = { name, text: newMessage, time, room };
 
     socket.emit("send-message", msgData);
-
-    setMessages((prev) => [
-      ...prev,
-      { ...msgData, isSelf: true },
-    ]);
-
+     console.log(msgData)
+    setMessages((prev) => [...prev, { ...msgData, isSelf: true }]);
+    console.log(messages)
     setNewMessage("");
+    console.log("d" , newMessage)
+    console.log(socketRef ,socket )
+    const data =await api.post(`/room/api/addchat/${room}`, {name : name ,chat : newMessage , userId : socket.id , role : role} )
+    
+    console.log(data)
   };
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-[#1a1a1a] to-[#121212] relative">
-
       {/* Status Banner */}
       {statusMessage && (
         <div className="absolute top-16 left-0 right-0 z-20 flex justify-center">
@@ -150,7 +164,6 @@ export const Chat = forwardRef(function Chat(
         className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide"
       >
         <div className="flex flex-col justify-end min-h-full space-y-5">
-
           {messages.length === 0 && (
             <p className="text-center text-gray-500 text-sm italic mt-16">
               Start the conversation 🚀
@@ -160,12 +173,9 @@ export const Chat = forwardRef(function Chat(
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex ${
-                msg.isSelf ? "justify-end" : "justify-start"
-              }`}
+              className={`flex ${msg.isSelf ? "justify-end" : "justify-start"}`}
             >
               <div className="flex items-end gap-2 max-w-[75%]">
-
                 {/* Avatar */}
                 {!msg.isSelf && (
                   <div className="w-7 h-7 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xs font-semibold text-orange-400">
@@ -182,7 +192,7 @@ export const Chat = forwardRef(function Chat(
                         : "bg-[#2a2a2a] text-gray-200 border border-white/5 rounded-2xl rounded-bl-md"
                     }`}
                   >
-                    {msg.text}
+                    {msg.text || msg.chat}
                   </div>
 
                   <p className="text-[10px] text-gray-500 mt-1 px-1">
@@ -192,21 +202,17 @@ export const Chat = forwardRef(function Chat(
               </div>
             </div>
           ))}
-
         </div>
       </div>
 
       {/* Input */}
       <div className="p-3 border-t border-white/5 bg-[#121212]/80 backdrop-blur-lg">
         <div className="flex items-center gap-2 bg-[#1f1f1f] rounded-2xl px-3 py-2 border border-white/5 focus-within:border-orange-500/40 transition">
-
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && handleSend()
-            }
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Type a message..."
             className="flex-1 bg-transparent outline-none text-sm text-gray-200 placeholder-gray-500"
           />
@@ -231,7 +237,6 @@ export const Chat = forwardRef(function Chat(
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
           </button>
-
         </div>
       </div>
     </div>

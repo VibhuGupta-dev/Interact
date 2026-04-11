@@ -126,6 +126,20 @@ export function MainScreen() {
     setCopy(true);
     setTimeout(() => setCopy(false), 2000);
   };
+  const [time, setTime] = useState("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const formatted = now.toLocaleTimeString();
+      setTime(formatted);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     setCopycomponent(true);
@@ -141,7 +155,7 @@ export function MainScreen() {
     <div className="h-screen bg-[#1a1a1a] text-[#e8e8e8] flex flex-col overflow-hidden">
       {/* Navbar */}
       <nav className="flex-shrink-0 sticky top-0 z-50 bg-[#1a1a1a]/80 border-b border-white/8 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto py-4 px-6 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto py-4 px-6 flex items-center justify-evenly">
           <footer className="fixed bottom-4 left-4 top-25 z-50">
             {role === "Owner" && copycomponent && (
               <div className="flex items-center gap-3 bg-[#242424] rounded-2xl p-2 border border-orange-500/30 shadow-2xl">
@@ -161,7 +175,12 @@ export function MainScreen() {
             )}
           </footer>
           <div className="text-orange-500 font-bold italic">VIBE ROOM</div>
+          <div className="text-lg font-semibold">
+            Room: <span className="text-green-400">{room}</span>
+          </div>
 
+          {/* Current Time */}
+          <div className="text-md text-gray-300">{time}</div>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsChatSidebarOpen(!isChatSidebarOpen)}

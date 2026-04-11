@@ -4,15 +4,12 @@ export interface IRoom extends Document {
   roomcode: string;
   host: Types.ObjectId;
 
-  participants: {
-    user: Types.ObjectId;
-    isMuted: boolean;
-    isVideoOn: boolean;
-  }[];
   chat: {
+    name: String;
     senderId: Types.ObjectId;
-    message: String;
+    chat: String;
     time: Date;
+    role : String;
   }[];
   isActive: boolean;
   createdAt: Date;
@@ -23,7 +20,7 @@ const roomSchema = new Schema<IRoom>({
     type: String,
     required: true,
     unique: true,
-    trim : true
+    trim: true,
   },
 
   host: {
@@ -32,24 +29,26 @@ const roomSchema = new Schema<IRoom>({
     required: true,
   },
 
- 
-
   chat: [
     {
+      name: {
+        type: String,
+      },
       senderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-      
       },
-      message: {
+      chat: {
         type: String,
         maxlength: 1000,
-       
         trim: true,
       },
       time: {
         type: Date,
         default: Date.now,
+      },
+      role : {
+        type : String
       },
     },
   ],
