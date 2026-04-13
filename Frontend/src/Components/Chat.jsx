@@ -5,6 +5,7 @@ import {
   useImperativeHandle,
   forwardRef,
   useLayoutEffect,
+  useCallback,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -12,16 +13,34 @@ import { clearUser } from "../Redux/Features/UserSlice";
 import { getSocket } from "../Api/ws";
 import api from "../Api/axios";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const normalizeMessage = (msg, selfName) => ({
+  name: msg.name,
+  text: msg.text ?? msg.chat ?? "",
+  time:
+    msg.time ??
+    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  isSelf: msg.name === selfName,
+});
+
+const getInitial = (name) => name?.charAt(0)?.toUpperCase() ?? "?";
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export const Chat = forwardRef(function Chat(
   { onNewJoinRequest, onUserJoined, onUserLeft },
-  ref,
+  ref
 ) {
   const [statusMessage, setStatusMessage] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [isFetching, setIsFetching] = useState(true);
+  const [sendError, setSendError] = useState("");
 
   const socketRef = useRef(null);
   const containerRef = useRef(null);
+  const inputRef = useRef(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -30,19 +49,22 @@ export const Chat = forwardRef(function Chat(
   const name = useSelector((store) => store.User.name);
   const role = useSelector((store) => store.User.role);
 
-  // expose socket
+  // ── Expose socket handle ──────────────────────────────────────────────────
+
   useImperativeHandle(ref, () => ({
     socket: socketRef.current,
   }));
 
-  // ✅ AUTO SCROLL FIX (reliable)
+  // ── Auto scroll ───────────────────────────────────────────────────────────
+
   useLayoutEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // auth + socket init
+  // ── Auth guard + socket init ──────────────────────────────────────────────
+
   useEffect(() => {
     if (!name) {
       dispatch(clearUser());
@@ -69,32 +91,33 @@ export const Chat = forwardRef(function Chat(
     };
   }, [name, dispatch, navigate]);
 
-  // socket events
+  // ── Socket events ─────────────────────────────────────────────────────────
+
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
 
+    const showStatus = (msg) => {
+      setStatusMessage(msg);
+      setTimeout(() => setStatusMessage(""), 3000);
+    };
+
     const handleNewJoinReq = (data) => onNewJoinRequest?.(data);
 
     const handleUserJoined = (data) => {
-      setStatusMessage(`👋 ${data.name} joined`);
-      setTimeout(() => setStatusMessage(""), 3000);
+      showStatus(`👋 ${data.name} joined`);
       onUserJoined?.(data);
     };
 
     const handleUserLeft = (data) => {
-      setStatusMessage(`🚶 ${data.name} left`);
-      setTimeout(() => setStatusMessage(""), 3000);
+      showStatus(`🚶 ${data.name} left`);
       onUserLeft?.(data);
     };
 
     const handleReceiveMessage = (data) => {
-      console.log("ff"  ,data)
       if (data.name === name) return;
-      setMessages((prev) => [...prev, { ...data, isSelf: data.name === name }]);
+      setMessages((prev) => [...prev, normalizeMessage(data, name)]);
     };
-
-  
 
     socket.on("newjoinreq", handleNewJoinReq);
     socket.on("userJoined", handleUserJoined);
@@ -109,50 +132,87 @@ export const Chat = forwardRef(function Chat(
     };
   }, [name, onNewJoinRequest, onUserJoined, onUserLeft]);
 
+  // ── Fetch chat history ────────────────────────────────────────────────────
+
   useEffect(() => {
-  const fetchChats = async () => {
-    const data = await api.get(`/room/api/getchat/${room}`)
-    const chats = data.data.chat
-    console.log("data" ,data)
-    setMessages(chats.map((msg) => ({  // ✅ : any hata do
-      ...msg,
-      isSelf: msg.name === name
-    })))
-  }
-  fetchChats()
-}, [])
-  // send message
-  const handleSend = async() => {
+    if (!room) return;
+
+    const fetchChats = async () => {
+      try {
+        setIsFetching(true);
+        const { data } = await api.get(`/room/api/getchat/${room}`);
+        const normalized = data.chat.map((msg) => normalizeMessage(msg, name));
+        setMessages(normalized);
+      } catch (err) {
+        console.error("[Chat] Failed to fetch chat history:", err);
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchChats();
+  }, [room, name]);
+
+  // ── Send message ──────────────────────────────────────────────────────────
+
+  const handleSend = useCallback(async () => {
     const socket = getSocket();
-    if (!newMessage.trim() || !socket) return;
+    const trimmed = newMessage.trim();
+    if (!trimmed || !socket) return;
+
+    setSendError("");
 
     const time = new Date().toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
 
-    const msgData = { name, text: newMessage, time, room };
+    const msgData = { name, text: trimmed, time, room };
 
-    socket.emit("send-message", msgData);
-     console.log(msgData)
+    // Optimistic update
     setMessages((prev) => [...prev, { ...msgData, isSelf: true }]);
-    console.log(messages)
     setNewMessage("");
-    console.log("d" , newMessage)
-    console.log(socketRef ,socket )
-    const data =await api.post(`/room/api/addchat/${room}`, {name : name ,chat : newMessage , userId : socket.id , role : role} )
-    
-    console.log(data)
-  };
+    inputRef.current?.focus();
+
+    // Emit to socket
+    socket.emit("send-message", msgData);
+
+    // Persist to DB
+    try {
+      await api.post(`/room/api/addchat/${room}`, {
+        name,
+        chat: trimmed,
+        userId: socket.id,
+        role,
+      });
+    } catch (err) {
+      console.error("[Chat] Failed to persist message:", err);
+      setSendError("Message not saved. Please try again.");
+      setTimeout(() => setSendError(""), 4000);
+    }
+  }, [newMessage, name, room, role]);
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-[#1a1a1a] to-[#121212] relative">
       {/* Status Banner */}
       {statusMessage && (
-        <div className="absolute top-16 left-0 right-0 z-20 flex justify-center">
+        <div className="absolute top-16 left-0 right-0 z-20 flex justify-center pointer-events-none">
           <div className="bg-orange-500/10 border border-orange-500/30 backdrop-blur-lg px-5 py-1.5 rounded-full shadow-md">
             <p className="text-orange-400 text-xs font-medium tracking-wide">
               {statusMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Send Error Banner */}
+      {sendError && (
+        <div className="absolute top-16 left-0 right-0 z-20 flex justify-center pointer-events-none">
+          <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-lg px-5 py-1.5 rounded-full shadow-md">
+            <p className="text-red-400 text-xs font-medium tracking-wide">
+              ⚠️ {sendError}
             </p>
           </div>
         </div>
@@ -164,44 +224,72 @@ export const Chat = forwardRef(function Chat(
         className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide"
       >
         <div className="flex flex-col justify-end min-h-full space-y-5">
-          {messages.length === 0 && (
+          {/* Loading skeleton */}
+          {isFetching && (
+            <div className="flex flex-col space-y-3 px-2">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
+                >
+                  <div className="h-9 rounded-2xl bg-white/5 animate-pulse w-40" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!isFetching && messages.length === 0 && (
             <p className="text-center text-gray-500 text-sm italic mt-16">
               Start the conversation 🚀
             </p>
           )}
 
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.isSelf ? "justify-end" : "justify-start"}`}
-            >
-              <div className="flex items-end gap-2 max-w-[75%]">
-                {/* Avatar */}
-                {!msg.isSelf && (
-                  <div className="w-7 h-7 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xs font-semibold text-orange-400">
-                    {msg.name?.charAt(0)}
-                  </div>
-                )}
+          {/* Message list */}
+          {!isFetching &&
+            messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${msg.isSelf ? "justify-end" : "justify-start"}`}
+              >
+                <div className="flex items-end gap-2 max-w-[75%]">
+                  {/* Avatar — other user */}
+                  {!msg.isSelf && (
+                    <div className="w-7 h-7 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xs font-semibold text-orange-400 shrink-0">
+                      {getInitial(msg.name)}
+                    </div>
+                  )}
 
-                {/* Bubble */}
-                <div>
-                  <div
-                    className={`px-4 py-2.5 text-sm leading-relaxed shadow-md ${
-                      msg.isSelf
-                        ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl rounded-br-md"
-                        : "bg-[#2a2a2a] text-gray-200 border border-white/5 rounded-2xl rounded-bl-md"
-                    }`}
-                  >
-                    {msg.text || msg.chat}
-                  </div>
+                  {/* Bubble */}
+                  <div>
+                    {/* Sender name — other user only */}
+                    {!msg.isSelf && (
+                      <p className="text-[10px] text-gray-500 mb-1 px-1">
+                        {msg.name}
+                      </p>
+                    )}
 
-                  <p className="text-[10px] text-gray-500 mt-1 px-1">
-                    {msg.time}
-                  </p>
+                    <div
+                      className={`px-4 py-2.5 text-sm leading-relaxed shadow-md break-words ${
+                        msg.isSelf
+                          ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl rounded-br-md"
+                          : "bg-[#2a2a2a] text-gray-200 border border-white/5 rounded-2xl rounded-bl-md"
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+
+                    <p
+                      className={`text-[10px] text-gray-500 mt-1 px-1 ${
+                        msg.isSelf ? "text-right" : "text-left"
+                      }`}
+                    >
+                      {msg.time}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
 
@@ -209,6 +297,7 @@ export const Chat = forwardRef(function Chat(
       <div className="p-3 border-t border-white/5 bg-[#121212]/80 backdrop-blur-lg">
         <div className="flex items-center gap-2 bg-[#1f1f1f] rounded-2xl px-3 py-2 border border-white/5 focus-within:border-orange-500/40 transition">
           <input
+            ref={inputRef}
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
@@ -220,7 +309,8 @@ export const Chat = forwardRef(function Chat(
           <button
             onClick={handleSend}
             disabled={!newMessage.trim()}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 transition shadow-md"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 transition shadow-md active:scale-95"
+            aria-label="Send message"
           >
             <svg
               width="17"

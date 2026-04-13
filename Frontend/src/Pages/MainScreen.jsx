@@ -7,6 +7,7 @@ import { copyToClipboard } from "../Api/copytoclipboard";
 import { PermissionScreen } from "../Components/Permission";
 import { createSocket } from "../Api/ws";
 import { UserInfo } from "../Components/userInfo";
+import { VideoStream } from "../Components/VideoStreams";
 
 export function MainScreen() {
   const { roomcode: urlRoomCode } = useParams();
@@ -279,6 +280,7 @@ export function MainScreen() {
           <div className="flex-1 rounded-3xl bg-white/5 border border-white/5 border-dashed flex items-center justify-center">
             <p className="text-gray-500 italic">
               Main Content Area (Video or Stream)
+              <VideoStream />
             </p>
           </div>
 
@@ -303,54 +305,83 @@ export function MainScreen() {
       </div>
 
       {/* Requests Modal (100% UNCHANGED) */}
-      {role === "Owner" && showRequests && (
-        <div
-          className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-md"
-          onClick={() => setShowRequests(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-24 right-8 w-full max-w-md bg-[#242424] rounded-2xl shadow-2xl border border-white/8 overflow-hidden"
-          >
-            <div className="bg-[#1a1a1a] border-b border-white/8 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-sm font-bold uppercase text-orange-500">
-                Join Requests
-              </h2>
-              <button onClick={() => setShowRequests(false)}>✕</button>
-            </div>
-            <div className="max-h-[400px] overflow-y-auto p-4 space-y-3">
-              {requests.length === 0 ? (
-                <p className="text-center py-10 text-gray-500 text-xs italic">
-                  No requests
-                </p>
-              ) : (
-                requests.map((req) => (
-                  <div
-                    key={req.userId}
-                    className="p-4 bg-white/5 rounded-xl flex items-center justify-between"
-                  >
-                    <p className="text-sm font-medium">{req.name}</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleAccept(req)}
-                        className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => handleReject(req)}
-                        className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+     {role === "Owner" && showRequests && (
+  <div
+    className="fixed inset-0 z-[60] bg-black/40"
+    onClick={() => setShowRequests(false)}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="absolute top-20 right-6 w-full max-w-sm bg-[#1c1c1c] border border-white/[0.06] rounded-2xl overflow-hidden"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-white">Join requests</span>
+          {requests.length > 0 && (
+            <span className="bg-amber-500/15 text-amber-400 text-[10px] font-medium px-2 py-0.5 rounded-full">
+              {requests.length}
+            </span>
+          )}
         </div>
-      )}
+        <button
+          onClick={() => setShowRequests(false)}
+          className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="max-h-[360px] overflow-y-auto p-3 space-y-2">
+        {requests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-2">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <p className="text-xs text-gray-600">No pending requests</p>
+          </div>
+        ) : (
+          requests.map((req) => (
+            <div
+              key={req.userId}
+              className="flex items-center justify-between px-4 py-3 bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.05] rounded-xl transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-medium">
+                  {req.name?.charAt(0)?.toUpperCase()}
+                </div>
+                <span className="text-sm text-white">{req.name}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleAccept(req)}
+                  className="flex items-center gap-1.5 bg-white/[0.06] hover:bg-green-500/20 border border-white/[0.08] hover:border-green-500/30 text-gray-300 hover:text-green-400 px-3 py-1.5 rounded-lg text-xs transition-all"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleReject(req)}
+                  className="flex items-center gap-1.5 bg-white/[0.06] hover:bg-red-500/20 border border-white/[0.08] hover:border-red-500/30 text-gray-300 hover:text-red-400 px-3 py-1.5 rounded-lg text-xs transition-all"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Footer */}
     </div>

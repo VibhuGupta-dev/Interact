@@ -11,6 +11,7 @@ export function socketcontroller(io: any) {
     console.log("USER CONNECTED:", socket.id);
 
     socket.on("owner-join", (data: any) => {
+      
       socket.join(`Owner-${data.roomcode}`);
       socket.join(data.roomcode);
       socket.name = data.name;
@@ -40,7 +41,8 @@ export function socketcontroller(io: any) {
       socket.roomcode = data.roomcode;
       socket.name = data.name;
       socket.role = data.role;
-
+       console.log(`Owner-${data.roomcode}`)
+       console.log(socket)
       io.to(`Owner-${data.roomcode}`).emit("newjoinreq", {
         name: data.name,
         userId: socket.id,
