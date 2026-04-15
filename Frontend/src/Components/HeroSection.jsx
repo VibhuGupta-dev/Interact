@@ -55,7 +55,7 @@ export default function HeroSection() {
     try {
       e.preventDefault();
       if(userid != null) {
-setError("");
+       setError("");
 
       if (!roomcode.trim()) {
         setError("Please enter a room code.");
@@ -66,7 +66,8 @@ setError("");
         { roomcode },
         Credential,
       );
-      if (checkownerroom.status == 201) {
+      console.log(checkownerroom)
+      if (checkownerroom.status == 200) {
         dispatch(setRole("Owner"));
         setTempRoomcode(roomcode);
         setShowAskName(true);

@@ -116,7 +116,14 @@ export function socketcontroller(io: any) {
         answer,
       });
     });
-
+// Node/Express socket.io server mein
+socket.on("media-state", ({ roomcode, micOn, camOn } : any) => {
+  socket.to(roomcode).emit("media-state", {
+    from: socket.id,
+    micOn,
+    camOn,
+  });
+});
     socket.on("ice-candidate", (data: any) => {
       const { candidate, to } = data;
       socket.to(to).emit("ice-candidate", {
@@ -138,6 +145,7 @@ export function socketcontroller(io: any) {
         text: data.text,
         time: data.time,
       });
+      
     });
 
     socket.on("disconnect", (reason: any) => {

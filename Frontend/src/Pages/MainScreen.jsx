@@ -239,7 +239,7 @@ export function MainScreen() {
         <div className="flex-1 flex flex-col p-6 gap-4 overflow-hidden">
           <div className="flex-1 rounded-3xl bg-white/5 border border-white/5 border-dashed flex items-center justify-center">
             {socket && <VideoStream />}
-            <p className="text-gray-500 italic">Main Content Area (Video or Stream)</p>
+           
           </div>
           <div className="h-[180px] overflow-y-auto rounded-2xl bg-white/5 border border-white/5 p-2">
             <UserInfo />
