@@ -11,7 +11,8 @@ const userSlice = createSlice({
     userrequest: null,
     userId: null,
     users: [],
-    peer:null
+    joined : false,
+   
   },
   reducers: {
     setName(state, action) {
@@ -39,9 +40,10 @@ const userSlice = createSlice({
     setUsers(state, action) {
       state.users = action.payload; 
     },
-    setPeer(state , action) {
-       state.peer = action.payload;
-    },
+    setJoined(state, action) {
+      state.joined = action.payload
+    }
+,
     clearUser(state) {
       state.name = "";
       state.loading = false;
@@ -51,7 +53,7 @@ const userSlice = createSlice({
       state.userrequest = null;
       state.userId = null;
       state.users = [];
-      state.peer = null;
+      state.joined = false;
     },
   },
 });
@@ -66,7 +68,7 @@ export const {
   clearUser,
   setUserId,
   setUsers,
-  setPeer,
+  setJoined
 } = userSlice.actions;
 
 export default userSlice.reducer;

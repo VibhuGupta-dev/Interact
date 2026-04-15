@@ -11,16 +11,13 @@ export function socketcontroller(io: any) {
     console.log("USER CONNECTED:", socket.id);
 
     socket.on("owner-join", (data: any) => {
-      
       socket.join(`Owner-${data.roomcode}`);
       socket.join(data.roomcode);
       socket.name = data.name;
       socket.roomcode = data.roomcode;
       socket.role = data.role;
 
-      if (!roomUsers[data.roomcode]) {
-        roomUsers[data.roomcode] = [];
-      }
+      if (!roomUsers[data.roomcode]) roomUsers[data.roomcode] = [];
 
       const alreadyExists = roomUsers[data.roomcode].find(
         (u) => u.userId === socket.id,
@@ -41,8 +38,7 @@ export function socketcontroller(io: any) {
       socket.roomcode = data.roomcode;
       socket.name = data.name;
       socket.role = data.role;
-       console.log(`Owner-${data.roomcode}`)
-       console.log(socket)
+
       io.to(`Owner-${data.roomcode}`).emit("newjoinreq", {
         name: data.name,
         userId: socket.id,
@@ -54,44 +50,96 @@ export function socketcontroller(io: any) {
     socket.on("acceptJoinRequest", (data: any) => {
       const targetSocket = io.sockets.sockets.get(data.userId);
 
-      if (targetSocket) {
-        targetSocket.join(data.roomcode);
-
-        if (!roomUsers[data.roomcode]) roomUsers[data.roomcode] = [];
-
-        const alreadyExists = roomUsers[data.roomcode].find(
-          (u) => u.userId === data.userId,
-        );
-        if (!alreadyExists) {
-          roomUsers[data.roomcode].push({
-            name: data.name,
-            role: data.role,
-            userId: data.userId,
-          });
-        }
-
-        io.to(data.userId).emit("requestAccepted");
-
-        io.to(data.roomcode).emit("users-update", roomUsers[data.roomcode]);
-
-        console.log("User accepted:", data.name, roomUsers[data.roomcode]);
-      } else {
+      if (!targetSocket) {
         console.log("Socket not found:", data.userId);
+        return;
       }
+
+      targetSocket.join(data.roomcode);
+
+      if (!roomUsers[data.roomcode]) roomUsers[data.roomcode] = [];
+
+      const alreadyExists = roomUsers[data.roomcode].find(
+        (u) => u.userId === data.userId,
+      );
+      if (!alreadyExists) {
+        roomUsers[data.roomcode].push({
+          name: data.name,
+          role: data.role,
+          userId: data.userId,
+        });
+      }
+
+      // Tell new user they were accepted — they will mount VideoStream
+      // and then emit "user-ready-rtc" once listeners are registered
+      io.to(data.userId).emit("requestAccepted");
+
+      // Send updated user list to whole room
+      io.to(data.roomcode).emit("users-update", roomUsers[data.roomcode]);
+
+      // ✅ REMOVED: Do NOT emit "user-join-rtc" here anymore
+      // The new user's VideoStream hasn't mounted yet, so existing users
+      // would send offers before the new user has registered listeners.
+      // Instead, the new user emits "user-ready-rtc" once they are set up.
+
+      console.log("User accepted:", data.name, roomUsers[data.roomcode]);
     });
+
+    // ✅ FIX: New user emits this after VideoStream mounts and listeners are ready
+    // We then tell all existing room members to start the offer process
+    socket.on("user-ready-rtc", (data: any) => {
+      const { roomcode } = data;
+      console.log("User ready for RTC:", socket.id, "in room:", roomcode);
+
+      // Emit to everyone else in the room (existing users)
+      // They will create a peer and send an offer to this new user
+      socket.to(roomcode).emit("user-join-rtc", {
+        userId: socket.id,
+        name: socket.name,
+      });
+    });
+
+    // ── WebRTC signaling ────────────────────────────────────────────────────
+
+    socket.on("offer", (data: any) => {
+      const { offer, roomcode, to } = data;
+      socket.to(to).emit("videocall", {
+        from: socket.id,
+        offer,
+      });
+    });
+
+    socket.on("answer", (data: any) => {
+      const { answer, to } = data;
+      socket.to(to).emit("answer-received", {
+        from: socket.id,
+        answer,
+      });
+    });
+
+    socket.on("ice-candidate", (data: any) => {
+      const { candidate, to } = data;
+      socket.to(to).emit("ice-candidate", {
+        from: socket.id,
+        candidate,
+      });
+    });
+
+    // ── Room management ─────────────────────────────────────────────────────
 
     socket.on("rejectJoinRequest", (data: any) => {
       io.to(data.userId).emit("requestRejected");
     });
-     
-socket.on("send-message", (data: any) => {
-  io.to(data.room).emit("receive-message", {
-    name: data.name,
-    room: data.room,
-    text: data.text,
-    time: data.time,
-  });
-});
+
+    socket.on("send-message", (data: any) => {
+      io.to(data.room).emit("receive-message", {
+        name: data.name,
+        room: data.room,
+        text: data.text,
+        time: data.time,
+      });
+    });
+
     socket.on("disconnect", (reason: any) => {
       console.log("Disconnected:", socket.id, reason);
 
