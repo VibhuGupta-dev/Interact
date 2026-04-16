@@ -49,15 +49,14 @@ export function MainScreen() {
       if (role === "Owner") {
         socket.emit("owner-join", { roomcode: urlRoomCode, name, role });
         setShowChat(true);
-        dispatch(setJoined(true)); // ✅ Owner ke liye sirf yahan
+        dispatch(setJoined(true));
       } else {
         socket.emit("user-join-request", { roomcode: urlRoomCode, name, role });
       }
     });
 
     socket.on("users-update", (updatedUsers) => {
-      dispatch(setUsers(updatedUsers)); // ✅ sirf users update, joined nahi
-      console.log("Users updated:", updatedUsers);
+      dispatch(setUsers(updatedUsers));
     });
 
     socket.on("newjoinreq", (data) => {
@@ -68,7 +67,7 @@ export function MainScreen() {
 
     socket.on("requestAccepted", () => {
       setShowChat(true);
-      dispatch(setJoined(true)); // ✅ User ke liye sirf yahan
+      dispatch(setJoined(true));
     });
 
     socket.on("requestRejected", () => {
@@ -144,6 +143,7 @@ export function MainScreen() {
 
   return (
     <div className="h-screen bg-[#1a1a1a] text-[#e8e8e8] flex flex-col overflow-hidden">
+      {/* ── Navbar ── */}
       <nav className="flex-shrink-0 sticky top-0 z-50 bg-[#1a1a1a]/80 border-b border-white/8 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto py-4 px-6 flex items-center justify-evenly">
           <footer className="fixed bottom-4 left-4 top-25 z-50">
@@ -164,11 +164,13 @@ export function MainScreen() {
               </div>
             )}
           </footer>
+
           <div className="text-orange-500 font-bold italic">VIBE ROOM</div>
           <div className="text-lg font-semibold">
             Room: <span className="text-green-400">{room}</span>
           </div>
           <div className="text-md text-gray-300">{time}</div>
+
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsChatSidebarOpen(!isChatSidebarOpen)}
@@ -235,18 +237,26 @@ export function MainScreen() {
         </div>
       </nav>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 flex flex-col p-6 gap-4 overflow-hidden">
-          <div className="flex-1 rounded-3xl bg-white/5 border border-white/5 border-dashed flex items-center justify-center">
-            {socket && <VideoStream />}
-           
+      {/* ── Body ── */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+
+        {/* ── Left: video + userinfo ── */}
+        <div className="flex-1 min-w-0 flex flex-col p-6 gap-4 overflow-hidden min-h-0">
+
+          {/* Video area — flex-1 with min-h-0 so it shares space correctly */}
+          <div className="flex-1 min-h-0 rounded-3xl bg-white/5 border border-white/5 border-dashed overflow-hidden">
+            {socket && <VideoStream socket={socket} />}
           </div>
-          <div className="h-[180px] overflow-y-auto rounded-2xl bg-white/5 border border-white/5 p-2">
-            <UserInfo />
-          </div>
+
+         
         </div>
 
-        <div className={`transition-all duration-300 border-l border-white/10 bg-[#1e1e1e] ${isChatSidebarOpen ? "w-[350px]" : "w-0 overflow-hidden"} flex flex-col`}>
+        {/* ── Right: chat sidebar ── */}
+        <div
+          className={`transition-all duration-300 border-l border-white/10 bg-[#1e1e1e] flex flex-col ${
+            isChatSidebarOpen ? "w-[350px]" : "w-0 overflow-hidden"
+          }`}
+        >
           {isChatSidebarOpen && (
             <div className="flex-1 min-h-0">
               <Chat socket={socket} name={name} room={room} role={role} />
@@ -255,9 +265,13 @@ export function MainScreen() {
         </div>
       </div>
 
+      {/* ── Join Requests Modal ── */}
       {role === "Owner" && showRequests && (
         <div className="fixed inset-0 z-[60] bg-black/40" onClick={() => setShowRequests(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="absolute top-20 right-6 w-full max-w-sm bg-[#1c1c1c] border border-white/[0.06] rounded-2xl overflow-hidden">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute top-20 right-6 w-full max-w-sm bg-[#1c1c1c] border border-white/[0.06] rounded-2xl overflow-hidden"
+          >
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-white">Join requests</span>
@@ -267,7 +281,10 @@ export function MainScreen() {
                   </span>
                 )}
               </div>
-              <button onClick={() => setShowRequests(false)} className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+              <button
+                onClick={() => setShowRequests(false)}
+                className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+              >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
@@ -281,7 +298,10 @@ export function MainScreen() {
                 </div>
               ) : (
                 requests.map((req) => (
-                  <div key={req.userId} className="flex items-center justify-between px-4 py-3 bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.05] rounded-xl transition-colors">
+                  <div
+                    key={req.userId}
+                    className="flex items-center justify-between px-4 py-3 bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.05] rounded-xl transition-colors"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-medium">
                         {req.name?.charAt(0)?.toUpperCase()}
@@ -289,12 +309,22 @@ export function MainScreen() {
                       <span className="text-sm text-white">{req.name}</span>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => handleAccept(req)} className="flex items-center gap-1.5 bg-white/[0.06] hover:bg-green-500/20 border border-white/[0.08] hover:border-green-500/30 text-gray-300 hover:text-green-400 px-3 py-1.5 rounded-lg text-xs transition-all">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5" /></svg>
+                      <button
+                        onClick={() => handleAccept(req)}
+                        className="flex items-center gap-1.5 bg-white/[0.06] hover:bg-green-500/20 border border-white/[0.08] hover:border-green-500/30 text-gray-300 hover:text-green-400 px-3 py-1.5 rounded-lg text-xs transition-all"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
                         Accept
                       </button>
-                      <button onClick={() => handleReject(req)} className="flex items-center gap-1.5 bg-white/[0.06] hover:bg-red-500/20 border border-white/[0.08] hover:border-red-500/30 text-gray-300 hover:text-red-400 px-3 py-1.5 rounded-lg text-xs transition-all">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                      <button
+                        onClick={() => handleReject(req)}
+                        className="flex items-center gap-1.5 bg-white/[0.06] hover:bg-red-500/20 border border-white/[0.08] hover:border-red-500/30 text-gray-300 hover:text-red-400 px-3 py-1.5 rounded-lg text-xs transition-all"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
                         Reject
                       </button>
                     </div>

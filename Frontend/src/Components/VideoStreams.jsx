@@ -72,21 +72,15 @@ const AvatarPlaceholder = ({ name = "?", small = false }) => {
   const initials = name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a]">
-      <div
-        className={`${
-          small ? "w-9 h-9 text-sm" : "w-14 h-14 text-xl"
-        } rounded-xl bg-orange-500 flex items-center justify-center text-white font-bold`}
-      >
+      <div className={`${ small ? "w-9 h-9 text-sm" : "w-14 h-14 text-xl" } rounded-xl bg-orange-500 flex items-center justify-center text-white font-bold`}>
         {initials}
       </div>
-      {!small && (
-        <p className="mt-2 text-[#e8e8e8]/60 text-sm font-medium">{name}</p>
-      )}
+      {!small && <p className="mt-2 text-[#e8e8e8]/60 text-sm font-medium">{name}</p>}
     </div>
   );
 };
 
-// ── Tile Overlay (name + mic badge) ───────────────────────────────────────
+// ── Tile Overlay ───────────────────────────────────────────────────────────
 const TileOverlay = ({ displayName, micOn }) => (
   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-2.5 py-2 bg-gradient-to-t from-black/70 to-transparent">
     <div className="flex items-center gap-1.5 min-w-0">
@@ -104,7 +98,7 @@ const TileOverlay = ({ displayName, micOn }) => (
 );
 
 // ── Remote Video Tile ──────────────────────────────────────────────────────
-const RemoteVideo = React.memo(({ userId, streamRef, peerStates, small }) => {
+const RemoteVideo = React.memo(({ userId, streamRef, peerStates, small, streamVersion }) => {
   const users = useSelector((store) => store.User.users);
   const videoEl = useRef(null);
 
@@ -115,7 +109,7 @@ const RemoteVideo = React.memo(({ userId, streamRef, peerStates, small }) => {
   useEffect(() => {
     const stream = streamRef.current[userId];
     if (videoEl.current && stream) videoEl.current.srcObject = stream;
-  }, [userId, streamRef, users]);
+  }, [userId, streamRef, users, streamVersion]); // ✅ streamVersion se effect re-trigger hoga
 
   return (
     <div className="relative w-full h-full min-h-0 bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/[0.05]">
@@ -123,9 +117,7 @@ const RemoteVideo = React.memo(({ userId, streamRef, peerStates, small }) => {
         ref={videoEl}
         autoPlay
         playsInline
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
-          !camOn ? "opacity-0" : "opacity-100"
-        }`}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
       />
       {!camOn && <AvatarPlaceholder name={displayName} small={small} />}
       <TileOverlay displayName={displayName} micOn={micOn} />
@@ -169,6 +161,7 @@ export function VideoStream() {
   const [camOn, setCamOn] = useState(true);
   const [remoteUserIds, setRemoteUserIds] = useState([]);
   const [peerStates, setPeerStates] = useState({});
+  const [streamVersions, setStreamVersions] = useState({}); // ✅ stream trigger ke liye
 
   const myName = useSelector((store) => store.User.name || "You");
 
@@ -232,23 +225,17 @@ export function VideoStream() {
 
         peer.ontrack = (event) => {
           incomingStream.addTrack(event.track);
-          const videoEl = remoteVideoRefs.current[userId];
-          if (videoEl && videoEl.srcObject !== incomingStream)
-            videoEl.srcObject = incomingStream;
+
+          // ✅ streamVersion bump karo taaki RemoteVideo ka useEffect re-run ho
           if (isMounted) {
-            setRemoteUserIds((prev) =>
-              prev.includes(userId) ? prev : [...prev, userId]
-            );
+            setStreamVersions((prev) => ({ ...prev, [userId]: (prev[userId] || 0) + 1 }));
+            setRemoteUserIds((prev) => prev.includes(userId) ? prev : [...prev, userId]);
           }
         };
 
         peer.onicecandidate = (event) => {
           if (event.candidate)
-            socket.emit("ice-candidate", {
-              candidate: event.candidate,
-              to: userId,
-              roomcode,
-            });
+            socket.emit("ice-candidate", { candidate: event.candidate, to: userId, roomcode });
         };
 
         peer.onconnectionstatechange = () =>
@@ -262,11 +249,8 @@ export function VideoStream() {
         const peer = peersRef.current[userId];
         if (!peer || buf.length === 0) return;
         for (const c of buf) {
-          try {
-            await peer.addIceCandidate(new RTCIceCandidate(c));
-          } catch (e) {
-            console.error(`[${userId}] ICE flush:`, e);
-          }
+          try { await peer.addIceCandidate(new RTCIceCandidate(c)); }
+          catch (e) { console.error(`[${userId}] ICE flush:`, e); }
         }
         iceBufRef.current[userId] = [];
       };
@@ -300,11 +284,8 @@ export function VideoStream() {
         const peer = peersRef.current[from];
         if (!peer || !candidate) return;
         if (peer.remoteDescription?.type) {
-          try {
-            await peer.addIceCandidate(new RTCIceCandidate(candidate));
-          } catch (e) {
-            console.error(`[${from}] ICE:`, e);
-          }
+          try { await peer.addIceCandidate(new RTCIceCandidate(candidate)); }
+          catch (e) { console.error(`[${from}] ICE:`, e); }
         } else {
           if (!iceBufRef.current[from]) iceBufRef.current[from] = [];
           iceBufRef.current[from].push(candidate);
@@ -342,81 +323,78 @@ export function VideoStream() {
   }, [roomcode, getUserMediaStream]);
 
   return (
-    /*
-      MainScreen mein yeh component ek rounded-3xl flex-1 box ke andar render
-      hota hai. w-full h-full se woh box poora fill kar lega.
-      rounded-3xl repeat kar rahe hain taaki video tiles parent ke andar clip hon.
-    */
-    <div className="w-full h-full flex flex-col overflow-hidden rounded-3xl">
+    <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl">
 
-      {/* ── Video Grid ───────────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 p-2">
-        <div
-          className="w-full h-full"
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${cols}, 1fr)`,
-            gridTemplateRows: `repeat(${rows}, 1fr)`,
-            gap: "6px",
-          }}
-        >
-          {/* Apna tile */}
-          <div className="relative w-full h-full min-h-0 bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/[0.05]">
+      {/* ── Video Grid ── */}
+      <div className="flex-1 min-h-0 p-2 overflow-hidden flex items-center justify-center">
+        {totalParticipants === 1 ? (
+
+          // ── Single user: centered square tile ──
+          <div className="relative bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/[0.05]"
+            style={{ width: "min(100%, calc(100vh - 140px))", aspectRatio: "1 / 1" }}
+          >
             <video
               ref={localVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
-                !camOn ? "opacity-0" : "opacity-100"
-              }`}
+              autoPlay playsInline muted
+              className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
             />
-            {!camOn && <AvatarPlaceholder name={myName} small={isSmallTile} />}
+            {!camOn && <AvatarPlaceholder name={myName} small={false} />}
             <TileOverlay displayName="You" micOn={micOn} />
           </div>
 
-          {/* Remote tiles */}
-          {remoteUserIds.map((userId) => (
-            <RemoteVideo
-              key={userId}
-              userId={userId}
-              streamRef={remoteStreams}
-              peerStates={peerStates}
-              small={isSmallTile}
-            />
-          ))}
-        </div>
+        ) : (
+
+          // ── Multi user: grid ──
+          <div
+            className="w-full h-full min-h-0"
+            style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+              gap: "6px",
+            }}
+          >
+            {/* Local tile */}
+            <div className="relative w-full h-full min-h-0 bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/[0.05]">
+              <video
+                ref={localVideoRef}
+                autoPlay playsInline muted
+                className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
+              />
+              {!camOn && <AvatarPlaceholder name={myName} small={isSmallTile} />}
+              <TileOverlay displayName="You" micOn={micOn} />
+            </div>
+
+            {/* Remote tiles */}
+            {remoteUserIds.map((userId) => (
+              <RemoteVideo
+                key={userId}
+                userId={userId}
+                streamRef={remoteStreams}
+                peerStates={peerStates}
+                small={isSmallTile}
+                streamVersion={streamVersions[userId] || 0} // ✅ pass karo
+              />
+            ))}
+          </div>
+
+        )}
       </div>
 
-      {/* ── Control Bar ──────────────────────────────────────────────── */}
+      {/* ── Control Bar ── */}
       <div className="flex-shrink-0 flex items-center justify-center gap-3 py-2.5 px-4 border-t border-white/[0.05] bg-[#1a1a1a]/60 backdrop-blur-sm">
-        <ControlBtn
-          onClick={toggleMic}
-          active={micOn}
-          label={micOn ? "Mute mic" : "Unmute mic"}
-        >
+        <ControlBtn onClick={toggleMic} active={micOn} label={micOn ? "Mute mic" : "Unmute mic"}>
           {micOn ? <MicIcon /> : <MicOffIcon />}
         </ControlBtn>
-
-        <ControlBtn
-          onClick={toggleCam}
-          active={camOn}
-          label={camOn ? "Camera off" : "Camera on"}
-        >
+        <ControlBtn onClick={toggleCam} active={camOn} label={camOn ? "Camera off" : "Camera on"}>
           {camOn ? <CamIcon /> : <CamOffIcon />}
         </ControlBtn>
-
-        {/* Divider */}
         <div className="w-px h-5 bg-white/10" />
-
-        <ControlBtn
-          onClick={() => window.history.back()}
-          danger
-          label="Leave call"
-        >
+        <ControlBtn onClick={() => window.history.back()} danger label="Leave call">
           <PhoneOffIcon />
         </ControlBtn>
       </div>
+
     </div>
   );
 }
