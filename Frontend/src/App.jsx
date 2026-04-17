@@ -21,7 +21,7 @@ function App() {
   return (
     <div className="w-full min-h-screen">
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage key={location.key} />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/:roomcode" element={<MainScreen />} />
       </Routes>

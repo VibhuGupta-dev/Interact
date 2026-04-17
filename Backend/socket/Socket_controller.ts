@@ -116,14 +116,14 @@ export function socketcontroller(io: any) {
         answer,
       });
     });
-// Node/Express socket.io server mein
-socket.on("media-state", ({ roomcode, micOn, camOn } : any) => {
-  socket.to(roomcode).emit("media-state", {
-    from: socket.id,
-    micOn,
-    camOn,
-  });
-});
+    // Node/Express socket.io server mein
+    socket.on("media-state", ({ roomcode, micOn, camOn }: any) => {
+      socket.to(roomcode).emit("media-state", {
+        from: socket.id,
+        micOn,
+        camOn,
+      });
+    });
     socket.on("ice-candidate", (data: any) => {
       const { candidate, to } = data;
       socket.to(to).emit("ice-candidate", {
@@ -137,7 +137,11 @@ socket.on("media-state", ({ roomcode, micOn, camOn } : any) => {
     socket.on("rejectJoinRequest", (data: any) => {
       io.to(data.userId).emit("requestRejected");
     });
-
+    socket.on("screen-share-state", ({ roomcode, sharing }: any) => {
+      socket
+        .to(roomcode)
+        .emit("screen-share-state", { from: socket.id, sharing });
+    });
     socket.on("send-message", (data: any) => {
       io.to(data.room).emit("receive-message", {
         name: data.name,
@@ -145,7 +149,6 @@ socket.on("media-state", ({ roomcode, micOn, camOn } : any) => {
         text: data.text,
         time: data.time,
       });
-      
     });
 
     socket.on("disconnect", (reason: any) => {

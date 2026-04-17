@@ -6,6 +6,7 @@ import { Chat } from "../Components/Chat";
 import { copyToClipboard } from "../Api/copytoclipboard";
 import { PermissionScreen } from "../Components/Permission";
 import { createSocket } from "../Api/ws";
+import { destroySocket } from "../Api/ws";
 import { UserInfo } from "../Components/userInfo";
 import { VideoStream } from "../Components/VideoStreams";
 
@@ -86,6 +87,7 @@ export function MainScreen() {
       socket.off("requestAccepted");
       socket.off("requestRejected");
       socket.off("userLeft");
+      destroySocket();
     };
   }, [socket, role, urlRoomCode, name, navigate, dispatch]);
 

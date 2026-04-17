@@ -3,7 +3,7 @@ import api from "../Api/axios";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { AskName } from "./AskName";
-import { setRole } from "../Redux/Features/UserSlice";
+import { setName, setRole} from "../Redux/Features/UserSlice";
 
 export default function HeroSection() {
   const [error, setError] = useState("");
@@ -14,10 +14,9 @@ export default function HeroSection() {
   const [tempRoomcode, setTempRoomcode] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const name = useSelector((store) => store.User.name);
   const userid = useSelector((store) => store.User.userId);
-
+  
   useEffect(() => {
     if (name && showAskName && tempRoomcode) {
       setTimeout(() => {
@@ -27,6 +26,11 @@ export default function HeroSection() {
       }, 300);
     }
   }, [name, showAskName, tempRoomcode, navigate]);
+
+  useEffect(() => {
+
+     dispatch((setName(null)))
+  } , [])
 
   const createRoom = async () => {
     try {
@@ -47,9 +51,7 @@ export default function HeroSection() {
       setLoading(false);
     }
   };
-  const role = useSelector((store) => {
-    store.User.role;
-  });
+
 
   const handlejoinroom = async (e) => {
     try {
