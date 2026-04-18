@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import dotenv from "dotenv";
-import userModel from "../modules/Auth_modules/Auth_model.ts"; // Sahi path check kar lena
+import userModel from "../modules/Auth_modules/Auth_model.js"; // Sahi path check kar lena
 
 dotenv.config();
 
