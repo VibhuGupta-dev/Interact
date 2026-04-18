@@ -226,8 +226,14 @@ export function VideoStream() {
 
   // Local video sync after layout changes
   useEffect(() => {
-    if (localVideoRef.current && localStreamRef.current) {
-      localVideoRef.current.srcObject = localStreamRef.current;
+    const el = localVideoRef.current;
+    const stream = localStreamRef.current;
+    if (el && stream) {
+      if (el.srcObject !== stream) {
+        el.srcObject = null;
+        el.srcObject = stream;
+        el.play().catch(() => {}); // autoplay policy se bachao
+      }
     }
   }, [totalParticipants, anyoneSharing]);
 
@@ -303,9 +309,25 @@ export function VideoStream() {
 
   const getUserMediaStream = useCallback(async () => {
     try {
+      // Agar tracks already live hain toh nayi stream mat lo — yahi camera delay ka reason hai
+      const existing = localStreamRef.current;
+      const allLive = existing?.getTracks().every((t) => t.readyState === "live");
+      if (existing && allLive) {
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = null;
+          localVideoRef.current.srcObject = existing;
+        }
+        return existing;
+      }
+      // Purani ended tracks band karo
+      existing?.getTracks().forEach((t) => t.stop());
+
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       localStreamRef.current = stream;
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = null; // pehle reset — stale srcObject se delay aata hai
+        localVideoRef.current.srcObject = stream;
+      }
       return stream;
     } catch (err) {
       console.error("[getUserMedia] FAILED:", err.name, err.message);
