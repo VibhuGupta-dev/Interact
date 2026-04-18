@@ -30,7 +30,7 @@ export const io : any= new Server(server, {
   }
 });
 app.use(cors({
-  origin: "http://localhost:5173", 
+  origin:CLIENT_URI, 
   methods: "GET,POST,PUT,DELETE",
   credentials: true, 
 }));
