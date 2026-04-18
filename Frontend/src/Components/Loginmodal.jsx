@@ -7,6 +7,7 @@ export default function LoginModal({ isOpen, onClose }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+const backendurl = import.meta.env.VITE_BACKEND_URI;
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -34,7 +35,7 @@ export default function LoginModal({ isOpen, onClose }) {
   };
 
   const handleGoogleLogin = () => {
-    window.open("http://localhost:5000/auth/google", "_self");
+    window.open(`${backendurl}/auth/google`, "_self");
   };
 
   // ✅ close on Escape key
