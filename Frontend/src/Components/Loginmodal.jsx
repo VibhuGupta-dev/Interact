@@ -7,7 +7,7 @@ export default function LoginModal({ isOpen, onClose }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-const backendurl = import.meta.env.VITE_BACKEND_URI;
+  const backendurl = import.meta.env.VITE_BACKEND_URI;
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -24,9 +24,14 @@ const backendurl = import.meta.env.VITE_BACKEND_URI;
 
     try {
       setLoading(true);
-      await api.post("/auth/api/login", { email, password }); 
-      onClose(); 
-      navigate("/"); 
+      const { data } = await api.post("/auth/api/login", { email, password });
+
+      if (data.token) {
+        localStorage.setItem("token", data.token); // ✅ token save
+      }
+
+      onClose();
+      navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password.");
     } finally {
@@ -38,7 +43,6 @@ const backendurl = import.meta.env.VITE_BACKEND_URI;
     window.open(`${backendurl}/auth/google`, "_self");
   };
 
-  // ✅ close on Escape key
   const handleKeyDown = (e) => {
     if (e.key === "Escape") onClose();
   };
@@ -75,7 +79,6 @@ const backendurl = import.meta.env.VITE_BACKEND_URI;
               <span className="text-[#e5e5e5] font-semibold text-sm tracking-widest">INTRACT</span>
             </div>
 
-            {/* ✅ Close button calls onClose */}
             <button
               onClick={onClose}
               className="w-7 h-7 rounded-lg flex items-center justify-center text-[#555] hover:text-[#999] hover:bg-white/5 transition-all duration-150"
@@ -157,7 +160,9 @@ const backendurl = import.meta.env.VITE_BACKEND_URI;
 
           <p className="text-[#555] text-sm text-center">
             Don't have an account?{" "}
-            <a href="/signup" className="text-orange-400 hover:text-orange-300 font-medium transition-colors">Sign up free</a>
+            <a href="/signup" className="text-orange-400 hover:text-orange-300 font-medium transition-colors">
+              Sign up free
+            </a>
           </p>
 
         </div>
