@@ -42,8 +42,9 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = async () => {
+const handleLogout = async () => {
     await api.post("/auth/api/logout");
+    localStorage.removeItem("token"); // ✅ localStorage se token hatao
     setUser(null);
     setDropdownOpen(false);
     navigate("/");
