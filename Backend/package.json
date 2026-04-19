@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "tsx watch server.ts",
-    "build": "tsc && cp -r config/passport.js dist/config/passport.js",
+    "build": "tsc",
     "start": "node dist/server.js"
   },
   "dependencies": {
