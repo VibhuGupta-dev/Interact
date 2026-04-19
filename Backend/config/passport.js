@@ -1,14 +1,18 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import dotenv from "dotenv";
-import userModel from "../modules/Auth_modules/Auth_model.js"; // Sahi path check kar lena
-const CLIENT_URI = process.env.CLIENT_URI
-dotenv.config();
 
-passport.use(new GoogleStrategy({
+dotenv.config(); // ✅ Sabse pehle load karo
+
+import userModel from "../modules/Auth_modules/Auth_model.js";
+
+const SERVER_URI = process.env.SERVER_URI;
+
+passport.use(new GoogleStrategy(
+  {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${CLIENT_URI}/auth/google/callback`,
+    callbackURL: `${SERVER_URI}/auth/google/callback`,
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
@@ -16,26 +20,25 @@ passport.use(new GoogleStrategy({
       let user = await userModel.findOne({ email: profile.emails[0].value });
 
       if (user) {
-        // Agar user pehle se hai, toh usme googleId update kar do (agar nahi hai toh)
+        // Agar user pehle se hai, googleId update karo agar missing hai
         if (!user.googleId) {
           user.googleId = profile.id;
           await user.save();
         }
         return done(null, user);
       } else {
-        // 2. Naya user banao (Required fields ka dhyan rakhte hue)
+        // 2. Naya user banao
         const newUser = await userModel.create({
           name: profile.displayName,
           email: profile.emails[0].value,
           googleId: profile.id,
-          image: profile.photos[0]?.value,
-          role: "User"
-          // Password yahan pass nahi karenge, validation error nahi aayega ab
+          image: profile.photos?.[0]?.value || "",
+          role: "User",
         });
         return done(null, newUser);
       }
     } catch (err) {
-      console.error("Error in Passport Callback:", err);
+      console.error("Error in Passport Google Callback:", err);
       return done(err, null);
     }
   }
@@ -43,7 +46,7 @@ passport.use(new GoogleStrategy({
 
 // Session handling
 passport.serializeUser((user, done) => {
-  done(null, user.id); // MongoDB ki _id session mein jayegi
+  done(null, user.id); // MongoDB _id session mein store hogi
 });
 
 passport.deserializeUser(async (id, done) => {
@@ -54,3 +57,5 @@ passport.deserializeUser(async (id, done) => {
     done(err, null);
   }
 });
+
+export default passport;
