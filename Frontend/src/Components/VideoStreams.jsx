@@ -14,6 +14,15 @@ function getGridConfig(n) {
   return { cols: 4, rows: Math.ceil(n / 4) };
 }
 
+// Mobile: max 2 cols
+function getMobileGridConfig(n) {
+  if (n === 1) return { cols: 1, rows: 1 };
+  if (n === 2) return { cols: 2, rows: 1 };
+  if (n <= 4) return { cols: 2, rows: 2 };
+  if (n <= 6) return { cols: 2, rows: 3 };
+  return { cols: 2, rows: Math.ceil(n / 2) };
+}
+
 // ── Icons ──────────────────────────────────────────────────────────────────
 const MicIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -80,12 +89,23 @@ const ScreenShareOffIcon = () => (
   </svg>
 );
 
+// ── Hook: detect mobile ────────────────────────────────────────────────────
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return isMobile;
+}
+
 // ── Avatar ─────────────────────────────────────────────────────────────────
 const AvatarPlaceholder = ({ name = "?", small = false }) => {
   const initials = name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a]">
-      <div className={`${small ? "w-9 h-9 text-sm" : "w-14 h-14 text-xl"} rounded-xl bg-orange-500 flex items-center justify-center text-white font-bold`}>
+      <div className={`${small ? "w-8 h-8 text-xs" : "w-14 h-14 text-xl"} rounded-xl bg-orange-500 flex items-center justify-center text-white font-bold`}>
         {initials}
       </div>
       {!small && <p className="mt-2 text-[#e8e8e8]/60 text-sm font-medium">{name}</p>}
@@ -94,16 +114,18 @@ const AvatarPlaceholder = ({ name = "?", small = false }) => {
 };
 
 // ── Tile Overlay ───────────────────────────────────────────────────────────
-const TileOverlay = ({ displayName, micOn }) => (
-  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-2.5 py-2 bg-gradient-to-t from-black/70 to-transparent">
-    <div className="flex items-center gap-1.5 min-w-0">
-      <div className="w-5 h-5 rounded-md bg-orange-500 flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0">
+const TileOverlay = ({ displayName, micOn, small = false }) => (
+  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
+    <div className="flex items-center gap-1 min-w-0">
+      <div className={`${small ? "w-4 h-4 text-[8px]" : "w-5 h-5 text-[9px]"} rounded-md bg-orange-500 flex items-center justify-center font-bold text-white flex-shrink-0`}>
         {displayName?.charAt(0)?.toUpperCase()}
       </div>
-      <span className="text-[#e8e8e8] text-xs font-medium truncate">{displayName}</span>
+      {!small && (
+        <span className="text-[#e8e8e8] text-xs font-medium truncate">{displayName}</span>
+      )}
     </div>
     {!micOn && (
-      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-red-500/90 text-white flex-shrink-0 ml-1">
+      <span className="flex items-center justify-center w-4 h-4 rounded-full bg-red-500/90 text-white flex-shrink-0">
         <MicOffSmall />
       </span>
     )}
@@ -111,8 +133,6 @@ const TileOverlay = ({ displayName, micOn }) => (
 );
 
 // ── Remote Video Tile ──────────────────────────────────────────────────────
-// isSharingScreen: agar yeh user screen share kar raha hai toh uski camera stream
-// normal dikhegi sidebar mein (screen wali nahi)
 const RemoteVideo = React.memo(({ userId, streamRef, peerStates, small, streamVersion }) => {
   const users = useSelector((store) => store.User.users);
   const videoEl = useRef(null);
@@ -133,7 +153,7 @@ const RemoteVideo = React.memo(({ userId, streamRef, peerStates, small, streamVe
         className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
       />
       {!camOn && <AvatarPlaceholder name={displayName} small={small} />}
-      <TileOverlay displayName={displayName} micOn={micOn} />
+      <TileOverlay displayName={displayName} micOn={micOn} small={small} />
     </div>
   );
 });
@@ -144,9 +164,9 @@ const ControlBtn = ({ onClick, active, danger = false, children, label }) => (
     onClick={onClick}
     title={label}
     className={`
-      flex items-center justify-center w-11 h-11 rounded-xl border transition-all duration-200
+      flex items-center justify-center w-12 h-12 sm:w-11 sm:h-11 rounded-2xl sm:rounded-xl border transition-all duration-200 active:scale-95
       ${danger
-        ? "bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25 hover:border-red-500/50"
+        ? "bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25"
         : active
           ? "bg-white/[0.07] border-white/[0.1] text-[#e8e8e8] hover:bg-white/12"
           : "bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25"
@@ -157,13 +177,9 @@ const ControlBtn = ({ onClick, active, danger = false, children, label }) => (
   </button>
 );
 
-// ── Screen Share Viewer ────────────────────────────────────────────────────
-// Alag component — jo bhi share kar raha ho uski stream yahan dikhegi
-// sharerId: socket/userId of presenter (null = apna share)
-// localRef: apni screen ka video ref
+// ── Screen Viewer ──────────────────────────────────────────────────────────
 const ScreenViewer = ({ isLocalShare, localScreenRef, remoteStream, presenterName }) => {
   const remoteVideoEl = useRef(null);
-
   useEffect(() => {
     if (!isLocalShare && remoteVideoEl.current && remoteStream) {
       remoteVideoEl.current.srcObject = remoteStream;
@@ -171,16 +187,14 @@ const ScreenViewer = ({ isLocalShare, localScreenRef, remoteStream, presenterNam
   }, [isLocalShare, remoteStream]);
 
   return (
-    <div className="relative w-full h-full bg-[#0d0d0d] rounded-2xl overflow-hidden border border-white/[0.06] flex items-center justify-center">
+    <div className="relative w-full h-full bg-[#0d0d0d] rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.06] flex items-center justify-center">
       {isLocalShare
         ? <video ref={localScreenRef} autoPlay playsInline muted className="w-full h-full object-contain" />
         : <video ref={remoteVideoEl} autoPlay playsInline className="w-full h-full object-contain" />
       }
-
-      {/* Presenter badge */}
-      <div className="absolute top-3 left-3 flex items-center gap-2 bg-black/55 backdrop-blur-sm rounded-lg px-2.5 py-1.5 pointer-events-none">
-        <span className={`w-2 h-2 rounded-full ${isLocalShare ? "bg-green-400" : "bg-blue-400"} animate-pulse`} />
-        <span className="text-white/90 text-xs font-medium">
+      <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/55 backdrop-blur-sm rounded-lg px-2 py-1 pointer-events-none">
+        <span className={`w-1.5 h-1.5 rounded-full ${isLocalShare ? "bg-green-400" : "bg-blue-400"} animate-pulse`} />
+        <span className="text-white/90 text-[10px] sm:text-xs font-medium">
           {isLocalShare ? "You are presenting" : `${presenterName} is presenting`}
         </span>
       </div>
@@ -193,6 +207,8 @@ const ScreenViewer = ({ isLocalShare, localScreenRef, remoteStream, presenterNam
 // ══════════════════════════════════════════════════════════════════════════
 export function VideoStream() {
   const { roomcode } = useParams();
+  const isMobile = useIsMobile();
+
   const socketRef = useRef(null);
   const peersRef = useRef({});
   const localStreamRef = useRef(null);
@@ -201,15 +217,12 @@ export function VideoStream() {
   const iceBufRef = useRef({});
   const cleanupRef = useRef(null);
   const localScreenStreamRef = useRef(null);
-  const screenVideoRef = useRef(null); // apni screen ka preview ref
+  const screenVideoRef = useRef(null);
 
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [screenSharing, setScreenSharing] = useState(false);
-
-  // Remote screen share info: { userId, stream } ya null
   const [remoteScreenInfo, setRemoteScreenInfo] = useState(null);
-
   const [remoteUserIds, setRemoteUserIds] = useState([]);
   const [peerStates, setPeerStates] = useState({});
   const [streamVersions, setStreamVersions] = useState({});
@@ -217,23 +230,21 @@ export function VideoStream() {
   const myName = useSelector((store) => store.User.name || "You");
   const users = useSelector((store) => store.User.users);
 
-  // ── Kya koi bhi screen share kar raha hai? ──
   const anyoneSharing = screenSharing || !!remoteScreenInfo;
-
   const totalParticipants = remoteUserIds.length + 1;
-  const { cols, rows } = getGridConfig(totalParticipants);
+  const desktopGrid = getGridConfig(totalParticipants);
+  const mobileGrid = getMobileGridConfig(totalParticipants);
+  const { cols, rows } = isMobile ? mobileGrid : desktopGrid;
   const isSmallTile = totalParticipants > 4;
 
-  // Local video sync after layout changes
+  // Local video sync
   useEffect(() => {
     const el = localVideoRef.current;
     const stream = localStreamRef.current;
-    if (el && stream) {
-      if (el.srcObject !== stream) {
-        el.srcObject = null;
-        el.srcObject = stream;
-        el.play().catch(() => {}); // autoplay policy se bachao
-      }
+    if (el && stream && el.srcObject !== stream) {
+      el.srcObject = null;
+      el.srcObject = stream;
+      el.play().catch(() => {});
     }
   }, [totalParticipants, anyoneSharing]);
 
@@ -251,55 +262,38 @@ export function VideoStream() {
     socketRef.current?.emit("media-state", { roomcode, micOn, camOn: newVal });
   };
 
-  // ── Screen Share Toggle ──────────────────────────────────────────────────
   const toggleScreenShare = useCallback(async () => {
     if (screenSharing) {
       localScreenStreamRef.current?.getTracks().forEach((t) => t.stop());
       localScreenStreamRef.current = null;
-
-      // Camera track peers ko wapas bhejo
       const camVideoTrack = localStreamRef.current?.getVideoTracks()[0];
       if (camVideoTrack) {
-        // Camera automatically enable karo — user ko manually toggle nahi karna padega
         camVideoTrack.enabled = true;
         Object.values(peersRef.current).forEach((peer) => {
           const sender = peer.getSenders().find((s) => s.track?.kind === "video");
           if (sender) sender.replaceTrack(camVideoTrack);
         });
       }
-
-      // Local video ref ko camera stream se reconnect karo
       if (localVideoRef.current && localStreamRef.current) {
         localVideoRef.current.srcObject = localStreamRef.current;
       }
-
       if (screenVideoRef.current) screenVideoRef.current.srcObject = null;
       socketRef.current?.emit("screen-share-state", { roomcode, sharing: false });
-
-      // State update: screen off, camera on
       setCamOn(true);
       socketRef.current?.emit("media-state", { roomcode, micOn, camOn: true });
       setScreenSharing(false);
       return;
     }
-
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
       localScreenStreamRef.current = screenStream;
-
-      // Browser ke "Stop sharing" button se bhi band ho
       screenStream.getVideoTracks()[0].onended = () => toggleScreenShare();
-
-      if (screenVideoRef.current) {
-        screenVideoRef.current.srcObject = screenStream;
-      }
-
+      if (screenVideoRef.current) screenVideoRef.current.srcObject = screenStream;
       const screenVideoTrack = screenStream.getVideoTracks()[0];
       Object.values(peersRef.current).forEach((peer) => {
         const sender = peer.getSenders().find((s) => s.track?.kind === "video");
         if (sender) sender.replaceTrack(screenVideoTrack);
       });
-
       socketRef.current?.emit("screen-share-state", { roomcode, sharing: true });
       setScreenSharing(true);
     } catch (err) {
@@ -309,7 +303,6 @@ export function VideoStream() {
 
   const getUserMediaStream = useCallback(async () => {
     try {
-      // Agar tracks already live hain toh nayi stream mat lo — yahi camera delay ka reason hai
       const existing = localStreamRef.current;
       const allLive = existing?.getTracks().every((t) => t.readyState === "live");
       if (existing && allLive) {
@@ -319,13 +312,11 @@ export function VideoStream() {
         }
         return existing;
       }
-      // Purani ended tracks band karo
       existing?.getTracks().forEach((t) => t.stop());
-
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       localStreamRef.current = stream;
       if (localVideoRef.current) {
-        localVideoRef.current.srcObject = null; // pehle reset — stale srcObject se delay aata hai
+        localVideoRef.current.srcObject = null;
         localVideoRef.current.srcObject = stream;
       }
       return stream;
@@ -337,7 +328,6 @@ export function VideoStream() {
 
   useEffect(() => {
     let isMounted = true;
-
     const setup = async () => {
       const stream = await getUserMediaStream();
       if (!stream || !isMounted) return;
@@ -356,7 +346,6 @@ export function VideoStream() {
         localStreamRef.current?.getTracks().forEach((track) => peer.addTrack(track, localStreamRef.current));
         const incomingStream = new MediaStream();
         remoteStreams.current[userId] = incomingStream;
-
         peer.ontrack = (event) => {
           incomingStream.addTrack(event.track);
           if (isMounted) {
@@ -391,7 +380,6 @@ export function VideoStream() {
         await peer.setLocalDescription(offer);
         socket.emit("offer", { offer: peer.localDescription, roomcode, to: userId });
       };
-
       const handleVideoCall = async ({ from, offer }) => {
         const peer = createPeer(from);
         peersRef.current[from] = peer;
@@ -401,14 +389,12 @@ export function VideoStream() {
         await peer.setLocalDescription(answer);
         socket.emit("answer", { answer, to: from, roomcode });
       };
-
       const handleAnswerReceived = async ({ from, answer }) => {
         const peer = peersRef.current[from];
         if (!peer) return;
         await peer.setRemoteDescription(new RTCSessionDescription(answer));
         await flushIce(from);
       };
-
       const handleIceCandidate = async ({ from, candidate }) => {
         const peer = peersRef.current[from];
         if (!peer || !candidate) return;
@@ -420,33 +406,21 @@ export function VideoStream() {
           iceBufRef.current[from].push(candidate);
         }
       };
-
       const handleUserLeft = ({ userId }) => {
         console.log(users);
-        if (peersRef.current[userId]) {
-          peersRef.current[userId].close();
-          delete peersRef.current[userId];
-        }
+        if (peersRef.current[userId]) { peersRef.current[userId].close(); delete peersRef.current[userId]; }
         console.log(users);
         delete remoteStreams.current[userId];
         setRemoteUserIds((prev) => prev.filter((id) => id !== userId));
         setPeerStates((prev) => { const next = { ...prev }; delete next[userId]; return next; });
         setStreamVersions((prev) => { const next = { ...prev }; delete next[userId]; return next; });
-        // Agar wahi user share kar raha tha toh clear karo
         setRemoteScreenInfo((prev) => prev?.userId === userId ? null : prev);
       };
-
       const handleMediaState = ({ from, micOn, camOn }) => {
         setPeerStates((prev) => ({ ...prev, [from]: { micOn, camOn } }));
       };
-
-      // ── Remote screen share event ──
-      // Jab koi remote user share kare ya band kare,
-      // SABKO yeh event milta hai — sab ka layout switch ho jaata hai
       const handleScreenShareState = ({ from, sharing }) => {
         if (sharing) {
-          // Remote user ki existing stream lo — usme abhi screen track aa chuka hoga
-          // (replaceTrack se track replace ho chuki hogi)
           const stream = remoteStreams.current[from];
           setRemoteScreenInfo({ userId: from, stream });
         } else {
@@ -478,36 +452,33 @@ export function VideoStream() {
         localScreenStreamRef.current = null;
       };
     };
-
     setup();
     return () => { isMounted = false; cleanupRef.current?.(); };
   }, [roomcode, getUserMediaStream]);
 
-  // Presenter ka naam dhundho
   const getPresenterName = (userId) => {
     if (!userId) return "";
     const user = users.find((u) => u.userId === userId || u.socketId === userId);
     return user?.name || user?.username || userId;
   };
 
+  // ── Sidebar width responsive ──
+  const sidebarWidth = isMobile ? "100px" : "168px";
+
   // ══════════════════════════════════════════════════════════════════════
   // RENDER
   // ══════════════════════════════════════════════════════════════════════
   return (
-    <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl bg-[#111111]">
+    <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-[#111111]">
 
-      {/* ── Main Video Area ── */}
+      {/* ── Video Area ── */}
       <div className="flex-1 min-h-0 overflow-hidden">
 
-        {/* ═══════════════════════════════════════════════════════
-            SCREEN SHARE LAYOUT  ←  sabka ek hi UI
-            Left: rectangular screen (16:9, object-contain)
-            Right sidebar: sabke square camera tiles
-            ═══════════════════════════════════════════════════ */}
+        {/* ═══════════════════════ SCREEN SHARE LAYOUT ═══════════════════════ */}
         {anyoneSharing ? (
-          <div className="w-full h-full flex p-2 gap-2">
+          <div className="w-full h-full flex p-1.5 sm:p-2 gap-1.5 sm:gap-2">
 
-            {/* ── Screen tile — rectangular, fills available space ── */}
+            {/* Screen tile */}
             <div className="flex-1 min-w-0 min-h-0">
               <ScreenViewer
                 isLocalShare={screenSharing}
@@ -517,12 +488,12 @@ export function VideoStream() {
               />
             </div>
 
-            {/* ── Right sidebar — square camera tiles ── */}
+            {/* Right sidebar — square tiles */}
             <div
-              className="flex-shrink-0 flex flex-col gap-2 overflow-y-auto overflow-x-hidden py-0.5"
-              style={{ width: "168px" }}
+              className="flex-shrink-0 flex flex-col gap-1.5 sm:gap-2 overflow-y-auto overflow-x-hidden py-0.5"
+              style={{ width: sidebarWidth }}
             >
-              {/* Apna camera tile */}
+              {/* My camera */}
               <div
                 className="relative w-full flex-shrink-0 bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/[0.05]"
                 style={{ aspectRatio: "1 / 1" }}
@@ -533,16 +504,12 @@ export function VideoStream() {
                   className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
                 />
                 {!camOn && <AvatarPlaceholder name={myName} small />}
-                <TileOverlay displayName="You" micOn={micOn} />
+                <TileOverlay displayName="You" micOn={micOn} small={isMobile} />
               </div>
 
-              {/* Baaki sabke camera tiles */}
+              {/* Remote cameras */}
               {remoteUserIds.map((userId) => (
-                <div
-                  key={userId}
-                  className="relative w-full flex-shrink-0"
-                  style={{ aspectRatio: "1 / 1" }}
-                >
+                <div key={userId} className="relative w-full flex-shrink-0" style={{ aspectRatio: "1 / 1" }}>
                   <RemoteVideo
                     userId={userId}
                     streamRef={remoteStreams}
@@ -556,16 +523,16 @@ export function VideoStream() {
           </div>
 
         ) : (
-          /* ═══════════════════════════════════════════════════════
-             NORMAL VIDEO CONFERENCE LAYOUT
-             Sabke square tiles — koi share nahi kar raha
-             ═══════════════════════════════════════════════════ */
-          <div className="w-full h-full flex items-center justify-center p-2">
+          /* ═══════════════════════ NORMAL GRID LAYOUT ═══════════════════════ */
+          <div className="w-full h-full flex items-center justify-center p-1.5 sm:p-2">
             {totalParticipants === 1 ? (
-              // Sirf aap — ek centred square tile
+              // Solo — centred square
               <div
                 className="relative bg-[#1e1e1e] rounded-2xl overflow-hidden border border-white/[0.05]"
-                style={{ width: "min(35%, calc(100vh - 140px))", aspectRatio: "1 / 1" }}
+                style={{
+                  width: isMobile ? "75vw" : "min(35%, calc(100vh - 140px))",
+                  aspectRatio: "1 / 1",
+                }}
               >
                 <video
                   ref={localVideoRef}
@@ -576,17 +543,17 @@ export function VideoStream() {
                 <TileOverlay displayName="You" micOn={micOn} />
               </div>
             ) : (
-              // Multiple users — square grid
+              // Grid
               <div
                 className="w-full h-full min-h-0"
                 style={{
                   display: "grid",
                   gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
                   gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-                  gap: "6px",
+                  gap: isMobile ? "4px" : "6px",
                 }}
               >
-                {/* Apni square tile */}
+                {/* My tile */}
                 <div
                   className="relative bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/[0.05]"
                   style={{ aspectRatio: "1 / 1" }}
@@ -596,18 +563,18 @@ export function VideoStream() {
                     autoPlay playsInline muted
                     className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
                   />
-                  {!camOn && <AvatarPlaceholder name={myName} small={isSmallTile} />}
-                  <TileOverlay displayName="You" micOn={micOn} />
+                  {!camOn && <AvatarPlaceholder name={myName} small={isSmallTile || isMobile} />}
+                  <TileOverlay displayName="You" micOn={micOn} small={isMobile && isSmallTile} />
                 </div>
 
-                {/* Baaki sabki square tiles */}
+                {/* Remote tiles */}
                 {remoteUserIds.map((userId) => (
                   <div key={userId} style={{ aspectRatio: "1 / 1" }}>
                     <RemoteVideo
                       userId={userId}
                       streamRef={remoteStreams}
                       peerStates={peerStates}
-                      small={isSmallTile}
+                      small={isSmallTile || isMobile}
                       streamVersion={streamVersions[userId] || 0}
                     />
                   </div>
@@ -619,16 +586,20 @@ export function VideoStream() {
       </div>
 
       {/* ── Control Bar ── */}
-      <div className="flex-shrink-0 flex items-center justify-center gap-3 py-2.5 px-4 border-t border-white/[0.05] bg-[#1a1a1a]/60 backdrop-blur-sm">
+      {/* Mobile: larger touch targets, pill shape, floating look */}
+      <div className="flex-shrink-0 flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-2.5 px-4 border-t border-white/[0.05] bg-[#1a1a1a]/80 backdrop-blur-sm">
         <ControlBtn onClick={toggleMic} active={micOn} label={micOn ? "Mute mic" : "Unmute mic"}>
           {micOn ? <MicIcon /> : <MicOffIcon />}
         </ControlBtn>
         <ControlBtn onClick={toggleCam} active={camOn} label={camOn ? "Camera off" : "Camera on"}>
           {camOn ? <CamIcon /> : <CamOffIcon />}
         </ControlBtn>
-        <ControlBtn onClick={toggleScreenShare} active={screenSharing} label={screenSharing ? "Stop sharing" : "Share screen"}>
-          {screenSharing ? <ScreenShareOffIcon /> : <ScreenShareIcon />}
-        </ControlBtn>
+        {/* Screen share — hide on mobile since getDisplayMedia not supported on most mobile browsers */}
+        {!isMobile && (
+          <ControlBtn onClick={toggleScreenShare} active={screenSharing} label={screenSharing ? "Stop sharing" : "Share screen"}>
+            {screenSharing ? <ScreenShareOffIcon /> : <ScreenShareIcon />}
+          </ControlBtn>
+        )}
         <div className="w-px h-5 bg-white/10" />
         <ControlBtn onClick={() => window.history.back()} danger label="Leave call">
           <PhoneOffIcon />
