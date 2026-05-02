@@ -25,7 +25,15 @@ function getMobileGridConfig(n) {
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const MicIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
     <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
     <line x1="12" y1="19" x2="12" y2="23" />
@@ -33,7 +41,15 @@ const MicIcon = () => (
   </svg>
 );
 const MicOffIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <line x1="1" y1="1" x2="23" y2="23" />
     <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
     <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
@@ -42,13 +58,29 @@ const MicOffIcon = () => (
   </svg>
 );
 const CamIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <polygon points="23 7 16 12 23 17 23 7" />
     <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
   </svg>
 );
 const CamOffIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <line x1="1" y1="1" x2="23" y2="23" />
     <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h1a2 2 0 0 1 2 2v9.34" />
     <line x1="16" y1="12" x2="23" y2="7" />
@@ -56,13 +88,29 @@ const CamOffIcon = () => (
   </svg>
 );
 const PhoneOffIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c1.12.45 2.3.78 3.53.98a2 2 0 0 1 1.7 2v3a2 2 0 0 1-2.18 2C6.72 21.5 2.5 17.28 2.5 12a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.2 1.23.53 2.41.98 3.53a2 2 0 0 1-.45 2.11L8.76 18.1" />
     <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
 const MicOffSmall = () => (
-  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className="w-3 h-3"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.5}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <line x1="1" y1="1" x2="23" y2="23" />
     <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
     <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
@@ -71,7 +119,15 @@ const MicOffSmall = () => (
   </svg>
 );
 const ScreenShareIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
     <line x1="8" y1="21" x2="16" y2="21" />
     <line x1="12" y1="17" x2="12" y2="21" />
@@ -80,7 +136,15 @@ const ScreenShareIcon = () => (
   </svg>
 );
 const ScreenShareOffIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
     <line x1="8" y1="21" x2="16" y2="21" />
     <line x1="12" y1="17" x2="12" y2="21" />
@@ -102,13 +166,22 @@ function useIsMobile() {
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
 const AvatarPlaceholder = ({ name = "?", small = false }) => {
-  const initials = name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a]">
-      <div className={`${small ? "w-8 h-8 text-xs" : "w-14 h-14 text-xl"} rounded-xl bg-orange-500 flex items-center justify-center text-white font-bold`}>
+      <div
+        className={`${small ? "w-8 h-8 text-xs" : "w-14 h-14 text-xl"} rounded-xl bg-orange-500 flex items-center justify-center text-white font-bold`}
+      >
         {initials}
       </div>
-      {!small && <p className="mt-2 text-[#e8e8e8]/60 text-sm font-medium">{name}</p>}
+      {!small && (
+        <p className="mt-2 text-[#e8e8e8]/60 text-sm font-medium">{name}</p>
+      )}
     </div>
   );
 };
@@ -117,11 +190,15 @@ const AvatarPlaceholder = ({ name = "?", small = false }) => {
 const TileOverlay = ({ displayName, micOn, small = false }) => (
   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
     <div className="flex items-center gap-1 min-w-0">
-      <div className={`${small ? "w-4 h-4 text-[8px]" : "w-5 h-5 text-[9px]"} rounded-md bg-orange-500 flex items-center justify-center font-bold text-white flex-shrink-0`}>
+      <div
+        className={`${small ? "w-4 h-4 text-[8px]" : "w-5 h-5 text-[9px]"} rounded-md bg-orange-500 flex items-center justify-center font-bold text-white flex-shrink-0`}
+      >
         {displayName?.charAt(0)?.toUpperCase()}
       </div>
       {!small && (
-        <span className="text-[#e8e8e8] text-xs font-medium truncate">{displayName}</span>
+        <span className="text-[#e8e8e8] text-xs font-medium truncate">
+          {displayName}
+        </span>
       )}
     </div>
     {!micOn && (
@@ -133,30 +210,35 @@ const TileOverlay = ({ displayName, micOn, small = false }) => (
 );
 
 // ── Remote Video Tile ──────────────────────────────────────────────────────
-const RemoteVideo = React.memo(({ userId, streamRef, peerStates, small, streamVersion }) => {
-  const users = useSelector((store) => store.User.users);
-  const videoEl = useRef(null);
-  const user = users.find((u) => u.userId === userId || u.socketId === userId);
-  const displayName = user?.name || user?.username || userId;
-  const { micOn = true, camOn = true } = peerStates[userId] || {};
+const RemoteVideo = React.memo(
+  ({ userId, streamRef, peerStates, small, streamVersion }) => {
+    const users = useSelector((store) => store.User.users);
+    const videoEl = useRef(null);
+    const user = users.find(
+      (u) => u.userId === userId || u.socketId === userId,
+    );
+    const displayName = user?.name || user?.username || userId;
+    const { micOn = true, camOn = true } = peerStates[userId] || {};
 
-  useEffect(() => {
-    const stream = streamRef.current[userId];
-    if (videoEl.current && stream) videoEl.current.srcObject = stream;
-  }, [userId, streamRef, users, streamVersion]);
+    useEffect(() => {
+      const stream = streamRef.current[userId];
+      if (videoEl.current && stream) videoEl.current.srcObject = stream;
+    }, [userId, streamRef, users, streamVersion]);
 
-  return (
-    <div className="relative w-full h-full bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/[0.05]">
-      <video
-        ref={videoEl}
-        autoPlay playsInline
-        className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
-      />
-      {!camOn && <AvatarPlaceholder name={displayName} small={small} />}
-      <TileOverlay displayName={displayName} micOn={micOn} small={small} />
-    </div>
-  );
-});
+    return (
+      <div className="relative w-full h-full bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/[0.05]">
+        <video
+          ref={videoEl}
+          autoPlay
+          playsInline
+          className={`w-full h-full object-cover transition-opacity duration-300 scale-x-[-1] ${!camOn ? "opacity-0" : "opacity-100"}`}
+        />
+        {!camOn && <AvatarPlaceholder name={displayName} small={small} />}
+        <TileOverlay displayName={displayName} micOn={micOn} small={small} />
+      </div>
+    );
+  },
+);
 
 // ── Control Button ─────────────────────────────────────────────────────────
 const ControlBtn = ({ onClick, active, danger = false, children, label }) => (
@@ -165,11 +247,12 @@ const ControlBtn = ({ onClick, active, danger = false, children, label }) => (
     title={label}
     className={`
       flex items-center justify-center w-12 h-12 sm:w-11 sm:h-11 rounded-2xl sm:rounded-xl border transition-all duration-200 active:scale-95
-      ${danger
-        ? "bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25"
-        : active
-          ? "bg-white/[0.07] border-white/[0.1] text-[#e8e8e8] hover:bg-white/12"
-          : "bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25"
+      ${
+        danger
+          ? "bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25"
+          : active
+            ? "bg-white/[0.07] border-white/[0.1] text-[#e8e8e8] hover:bg-white/12"
+            : "bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25"
       }
     `}
   >
@@ -178,7 +261,12 @@ const ControlBtn = ({ onClick, active, danger = false, children, label }) => (
 );
 
 // ── Screen Viewer ──────────────────────────────────────────────────────────
-const ScreenViewer = ({ isLocalShare, localScreenRef, remoteStream, presenterName }) => {
+const ScreenViewer = ({
+  isLocalShare,
+  localScreenRef,
+  remoteStream,
+  presenterName,
+}) => {
   const remoteVideoEl = useRef(null);
   useEffect(() => {
     if (!isLocalShare && remoteVideoEl.current && remoteStream) {
@@ -188,14 +276,30 @@ const ScreenViewer = ({ isLocalShare, localScreenRef, remoteStream, presenterNam
 
   return (
     <div className="relative w-full h-full bg-[#0d0d0d] rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.06] flex items-center justify-center">
-      {isLocalShare
-        ? <video ref={localScreenRef} autoPlay playsInline muted className="w-full h-full object-contain" />
-        : <video ref={remoteVideoEl} autoPlay playsInline className="w-full h-full object-contain" />
-      }
+      {isLocalShare ? (
+        <video
+          ref={localScreenRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-contain"
+        />
+      ) : (
+        <video
+          ref={remoteVideoEl}
+          autoPlay
+          playsInline
+          className="w-full h-full object-contain"
+        />
+      )}
       <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/55 backdrop-blur-sm rounded-lg px-2 py-1 pointer-events-none">
-        <span className={`w-1.5 h-1.5 rounded-full ${isLocalShare ? "bg-green-400" : "bg-blue-400"} animate-pulse`} />
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${isLocalShare ? "bg-green-400" : "bg-blue-400"} animate-pulse`}
+        />
         <span className="text-white/90 text-[10px] sm:text-xs font-medium">
-          {isLocalShare ? "You are presenting" : `${presenterName} is presenting`}
+          {isLocalShare
+            ? "You are presenting"
+            : `${presenterName} is presenting`}
         </span>
       </div>
     </div>
@@ -251,14 +355,18 @@ export function VideoStream() {
   const toggleMic = () => {
     const newVal = !micOn;
     setMicOn(newVal);
-    localStreamRef.current?.getAudioTracks().forEach((t) => (t.enabled = newVal));
+    localStreamRef.current
+      ?.getAudioTracks()
+      .forEach((t) => (t.enabled = newVal));
     socketRef.current?.emit("media-state", { roomcode, micOn: newVal, camOn });
   };
 
   const toggleCam = () => {
     const newVal = !camOn;
     setCamOn(newVal);
-    localStreamRef.current?.getVideoTracks().forEach((t) => (t.enabled = newVal));
+    localStreamRef.current
+      ?.getVideoTracks()
+      .forEach((t) => (t.enabled = newVal));
     socketRef.current?.emit("media-state", { roomcode, micOn, camOn: newVal });
   };
 
@@ -270,7 +378,9 @@ export function VideoStream() {
       if (camVideoTrack) {
         camVideoTrack.enabled = true;
         Object.values(peersRef.current).forEach((peer) => {
-          const sender = peer.getSenders().find((s) => s.track?.kind === "video");
+          const sender = peer
+            .getSenders()
+            .find((s) => s.track?.kind === "video");
           if (sender) sender.replaceTrack(camVideoTrack);
         });
       }
@@ -278,23 +388,33 @@ export function VideoStream() {
         localVideoRef.current.srcObject = localStreamRef.current;
       }
       if (screenVideoRef.current) screenVideoRef.current.srcObject = null;
-      socketRef.current?.emit("screen-share-state", { roomcode, sharing: false });
+      socketRef.current?.emit("screen-share-state", {
+        roomcode,
+        sharing: false,
+      });
       setCamOn(true);
       socketRef.current?.emit("media-state", { roomcode, micOn, camOn: true });
       setScreenSharing(false);
       return;
     }
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
       localScreenStreamRef.current = screenStream;
       screenStream.getVideoTracks()[0].onended = () => toggleScreenShare();
-      if (screenVideoRef.current) screenVideoRef.current.srcObject = screenStream;
+      if (screenVideoRef.current)
+        screenVideoRef.current.srcObject = screenStream;
       const screenVideoTrack = screenStream.getVideoTracks()[0];
       Object.values(peersRef.current).forEach((peer) => {
         const sender = peer.getSenders().find((s) => s.track?.kind === "video");
         if (sender) sender.replaceTrack(screenVideoTrack);
       });
-      socketRef.current?.emit("screen-share-state", { roomcode, sharing: true });
+      socketRef.current?.emit("screen-share-state", {
+        roomcode,
+        sharing: true,
+      });
       setScreenSharing(true);
     } catch (err) {
       console.error("[ScreenShare] FAILED:", err.name, err.message);
@@ -304,7 +424,9 @@ export function VideoStream() {
   const getUserMediaStream = useCallback(async () => {
     try {
       const existing = localStreamRef.current;
-      const allLive = existing?.getTracks().every((t) => t.readyState === "live");
+      const allLive = existing
+        ?.getTracks()
+        .every((t) => t.readyState === "live");
       if (existing && allLive) {
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = null;
@@ -313,7 +435,10 @@ export function VideoStream() {
         return existing;
       }
       existing?.getTracks().forEach((t) => t.stop());
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
       localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = null;
@@ -343,19 +468,30 @@ export function VideoStream() {
             { urls: "stun:stun1.l.google.com:19302" },
           ],
         });
-        localStreamRef.current?.getTracks().forEach((track) => peer.addTrack(track, localStreamRef.current));
+        localStreamRef.current
+          ?.getTracks()
+          .forEach((track) => peer.addTrack(track, localStreamRef.current));
         const incomingStream = new MediaStream();
         remoteStreams.current[userId] = incomingStream;
         peer.ontrack = (event) => {
           incomingStream.addTrack(event.track);
           if (isMounted) {
-            setStreamVersions((prev) => ({ ...prev, [userId]: (prev[userId] || 0) + 1 }));
-            setRemoteUserIds((prev) => prev.includes(userId) ? prev : [...prev, userId]);
+            setStreamVersions((prev) => ({
+              ...prev,
+              [userId]: (prev[userId] || 0) + 1,
+            }));
+            setRemoteUserIds((prev) =>
+              prev.includes(userId) ? prev : [...prev, userId],
+            );
           }
         };
         peer.onicecandidate = (event) => {
           if (event.candidate)
-            socket.emit("ice-candidate", { candidate: event.candidate, to: userId, roomcode });
+            socket.emit("ice-candidate", {
+              candidate: event.candidate,
+              to: userId,
+              roomcode,
+            });
         };
         peer.onconnectionstatechange = () =>
           console.log(`[${userId}] connectionState: ${peer.connectionState}`);
@@ -367,8 +503,11 @@ export function VideoStream() {
         const peer = peersRef.current[userId];
         if (!peer || buf.length === 0) return;
         for (const c of buf) {
-          try { await peer.addIceCandidate(new RTCIceCandidate(c)); }
-          catch (e) { console.error(`[${userId}] ICE flush:`, e); }
+          try {
+            await peer.addIceCandidate(new RTCIceCandidate(c));
+          } catch (e) {
+            console.error(`[${userId}] ICE flush:`, e);
+          }
         }
         iceBufRef.current[userId] = [];
       };
@@ -378,7 +517,11 @@ export function VideoStream() {
         peersRef.current[userId] = peer;
         const offer = await peer.createOffer();
         await peer.setLocalDescription(offer);
-        socket.emit("offer", { offer: peer.localDescription, roomcode, to: userId });
+        socket.emit("offer", {
+          offer: peer.localDescription,
+          roomcode,
+          to: userId,
+        });
       };
       const handleVideoCall = async ({ from, offer }) => {
         const peer = createPeer(from);
@@ -399,8 +542,11 @@ export function VideoStream() {
         const peer = peersRef.current[from];
         if (!peer || !candidate) return;
         if (peer.remoteDescription?.type) {
-          try { await peer.addIceCandidate(new RTCIceCandidate(candidate)); }
-          catch (e) { console.error(`[${from}] ICE:`, e); }
+          try {
+            await peer.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (e) {
+            console.error(`[${from}] ICE:`, e);
+          }
         } else {
           if (!iceBufRef.current[from]) iceBufRef.current[from] = [];
           iceBufRef.current[from].push(candidate);
@@ -408,13 +554,24 @@ export function VideoStream() {
       };
       const handleUserLeft = ({ userId }) => {
         console.log(users);
-        if (peersRef.current[userId]) { peersRef.current[userId].close(); delete peersRef.current[userId]; }
+        if (peersRef.current[userId]) {
+          peersRef.current[userId].close();
+          delete peersRef.current[userId];
+        }
         console.log(users);
         delete remoteStreams.current[userId];
         setRemoteUserIds((prev) => prev.filter((id) => id !== userId));
-        setPeerStates((prev) => { const next = { ...prev }; delete next[userId]; return next; });
-        setStreamVersions((prev) => { const next = { ...prev }; delete next[userId]; return next; });
-        setRemoteScreenInfo((prev) => prev?.userId === userId ? null : prev);
+        setPeerStates((prev) => {
+          const next = { ...prev };
+          delete next[userId];
+          return next;
+        });
+        setStreamVersions((prev) => {
+          const next = { ...prev };
+          delete next[userId];
+          return next;
+        });
+        setRemoteScreenInfo((prev) => (prev?.userId === userId ? null : prev));
       };
       const handleMediaState = ({ from, micOn, camOn }) => {
         setPeerStates((prev) => ({ ...prev, [from]: { micOn, camOn } }));
@@ -453,12 +610,17 @@ export function VideoStream() {
       };
     };
     setup();
-    return () => { isMounted = false; cleanupRef.current?.(); };
+    return () => {
+      isMounted = false;
+      cleanupRef.current?.();
+    };
   }, [roomcode, getUserMediaStream]);
 
   const getPresenterName = (userId) => {
     if (!userId) return "";
-    const user = users.find((u) => u.userId === userId || u.socketId === userId);
+    const user = users.find(
+      (u) => u.userId === userId || u.socketId === userId,
+    );
     return user?.name || user?.username || userId;
   };
 
@@ -470,14 +632,11 @@ export function VideoStream() {
   // ══════════════════════════════════════════════════════════════════════
   return (
     <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-[#111111]">
-
       {/* ── Video Area ── */}
       <div className="flex-1 min-h-0 overflow-hidden">
-
         {/* ═══════════════════════ SCREEN SHARE LAYOUT ═══════════════════════ */}
         {anyoneSharing ? (
           <div className="w-full h-full flex p-1.5 sm:p-2 gap-1.5 sm:gap-2">
-
             {/* Screen tile */}
             <div className="flex-1 min-w-0 min-h-0">
               <ScreenViewer
@@ -500,8 +659,10 @@ export function VideoStream() {
               >
                 <video
                   ref={localVideoRef}
-                  autoPlay playsInline muted
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`w-full h-full object-cover transition-opacity duration-300 scale-x-[-1] ${!camOn ? "opacity-0" : "opacity-100"}`}
                 />
                 {!camOn && <AvatarPlaceholder name={myName} small />}
                 <TileOverlay displayName="You" micOn={micOn} small={isMobile} />
@@ -509,7 +670,11 @@ export function VideoStream() {
 
               {/* Remote cameras */}
               {remoteUserIds.map((userId) => (
-                <div key={userId} className="relative w-full flex-shrink-0" style={{ aspectRatio: "1 / 1" }}>
+                <div
+                  key={userId}
+                  className="relative w-full flex-shrink-0"
+                  style={{ aspectRatio: "1 / 1" }}
+                >
                   <RemoteVideo
                     userId={userId}
                     streamRef={remoteStreams}
@@ -521,7 +686,6 @@ export function VideoStream() {
               ))}
             </div>
           </div>
-
         ) : (
           /* ═══════════════════════ NORMAL GRID LAYOUT ═══════════════════════ */
           <div className="w-full h-full flex items-center justify-center p-1.5 sm:p-2">
@@ -536,8 +700,10 @@ export function VideoStream() {
               >
                 <video
                   ref={localVideoRef}
-                  autoPlay playsInline muted
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`w-full h-full object-cover transition-opacity duration-300 scale-x-[-1] ${!camOn ? "opacity-0" : "opacity-100"}`}
                 />
                 {!camOn && <AvatarPlaceholder name={myName} />}
                 <TileOverlay displayName="You" micOn={micOn} />
@@ -560,11 +726,22 @@ export function VideoStream() {
                 >
                   <video
                     ref={localVideoRef}
-                    autoPlay playsInline muted
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${!camOn ? "opacity-0" : "opacity-100"}`}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={`w-full h-full object-cover transition-opacity duration-300 scale-x-[-1] ${!camOn ? "opacity-0" : "opacity-100"}`}
                   />
-                  {!camOn && <AvatarPlaceholder name={myName} small={isSmallTile || isMobile} />}
-                  <TileOverlay displayName="You" micOn={micOn} small={isMobile && isSmallTile} />
+                  {!camOn && (
+                    <AvatarPlaceholder
+                      name={myName}
+                      small={isSmallTile || isMobile}
+                    />
+                  )}
+                  <TileOverlay
+                    displayName="You"
+                    micOn={micOn}
+                    small={isMobile && isSmallTile}
+                  />
                 </div>
 
                 {/* Remote tiles */}
@@ -588,20 +765,36 @@ export function VideoStream() {
       {/* ── Control Bar ── */}
       {/* Mobile: larger touch targets, pill shape, floating look */}
       <div className="flex-shrink-0 flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-2.5 px-4 border-t border-white/[0.05] bg-[#1a1a1a]/80 backdrop-blur-sm">
-        <ControlBtn onClick={toggleMic} active={micOn} label={micOn ? "Mute mic" : "Unmute mic"}>
+        <ControlBtn
+          onClick={toggleMic}
+          active={micOn}
+          label={micOn ? "Mute mic" : "Unmute mic"}
+        >
           {micOn ? <MicIcon /> : <MicOffIcon />}
         </ControlBtn>
-        <ControlBtn onClick={toggleCam} active={camOn} label={camOn ? "Camera off" : "Camera on"}>
+        <ControlBtn
+          onClick={toggleCam}
+          active={camOn}
+          label={camOn ? "Camera off" : "Camera on"}
+        >
           {camOn ? <CamIcon /> : <CamOffIcon />}
         </ControlBtn>
         {/* Screen share — hide on mobile since getDisplayMedia not supported on most mobile browsers */}
         {!isMobile && (
-          <ControlBtn onClick={toggleScreenShare} active={screenSharing} label={screenSharing ? "Stop sharing" : "Share screen"}>
+          <ControlBtn
+            onClick={toggleScreenShare}
+            active={screenSharing}
+            label={screenSharing ? "Stop sharing" : "Share screen"}
+          >
             {screenSharing ? <ScreenShareOffIcon /> : <ScreenShareIcon />}
           </ControlBtn>
         )}
         <div className="w-px h-5 bg-white/10" />
-        <ControlBtn onClick={() => window.history.back()} danger label="Leave call">
+        <ControlBtn
+          onClick={() => window.history.back()}
+          danger
+          label="Leave call"
+        >
           <PhoneOffIcon />
         </ControlBtn>
       </div>
