@@ -4,6 +4,7 @@ import { Room } from "./Room_model.js";
 import { Request, Response } from "express";
 import cron from "node-cron";
 import { redis, subscriber } from "../../app.js";
+import { encrypt, decrypt } from "../../utils/cryptoUtils.js";
 
 // ─── Room Controllers ─────────────────────────────────────────────────────────
 
@@ -86,13 +87,15 @@ const flushToDB = async (roomcode: string): Promise<void> => {
 
   await Room.findOneAndUpdate(
     { roomcode },
-    { $push: { chat: { $each: parsedMessages } } }
+    { $push: { chat: { $each: parsedMessages } } },
   );
 
   await redis.del(dataKey);
   await redis.del(ttlKey);
 
-  console.log(`[flushToDB] Flushed ${parsedMessages.length} msgs for room ${roomcode}`);
+  console.log(
+    `[flushToDB] Flushed ${parsedMessages.length} msgs for room ${roomcode}`,
+  );
 };
 
 // ─── Subscriber (TTL expiry listener) ────────────────────────────────────────
@@ -108,7 +111,7 @@ const startSubscriber = async (): Promise<void> => {
 
     console.log(`[subscriber] TTL expired for room ${roomcode}`);
     flushToDB(roomcode).catch((err) =>
-      console.error(`[subscriber] flushToDB failed for ${roomcode}:`, err)
+      console.error(`[subscriber] flushToDB failed for ${roomcode}:`, err),
     );
   });
 
@@ -133,7 +136,7 @@ const startCron = (): void => {
       if (!ttlExists) {
         console.log(`[cron] Catching missed flush for room ${roomcode}`);
         await flushToDB(roomcode).catch((err) =>
-          console.error(`[cron] flushToDB failed for ${roomcode}:`, err)
+          console.error(`[cron] flushToDB failed for ${roomcode}:`, err),
         );
       }
     }
@@ -153,7 +156,7 @@ export const initChatServices = async (): Promise<void> => {
 export const storechat = async (req: Request, res: Response) => {
   try {
     const { chat, name, userId, role, time } = req.body;
-    const roomcode : any = req.params.roomcode;
+    const roomcode: any = req.params.roomcode;
 
     if (!chat || !name || !roomcode) {
       return res.status(400).json({ message: "chat, name, roomcode required" });
@@ -161,23 +164,24 @@ export const storechat = async (req: Request, res: Response) => {
 
     const dataKey = `room:${roomcode}:messages`;
     const ttlKey = `room:${roomcode}:messages:ttl`;
+    const encryptedchat = encrypt(chat);
 
-    // ✅ Frontend ka time use karo, fallback mein current time
     const message = {
-      chat,
+      encryptedchat,
       name,
       userId,
       role,
-      time: time ?? new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      time:
+        time ??
+        new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
     };
 
     await redis.rpush(dataKey, JSON.stringify(message));
     await redis.set(ttlKey, "1", "EX", 60 * 60 * 2);
 
-    // Flush if list too large
     const length = await redis.llen(dataKey);
     if (length > 50) {
       await flushToDB(roomcode);
@@ -204,28 +208,51 @@ export const getchat = async (req: Request, res: Response) => {
     if (cacheExists) {
       const cachedMessages = await redis.lrange(dataKey, 0, -1);
       const parsed = cachedMessages.map((m: string) => JSON.parse(m));
-      return res.status(200).json({ chat: parsed });
+
+      // ✅ Correctly access nested encryptedchat and preserve all fields
+      const decryptedChat = parsed.map((message: any) => ({
+        ...message,
+        chat: decrypt(
+          message.encryptedchat.content,
+          message.encryptedchat.iv,
+          message.encryptedchat.tag,
+        ),
+        encryptedchat: undefined, // strip raw encrypted field
+      }));
+
+      return res.status(200).json({ chat: decryptedChat });
     }
 
     // ✅ DB fallback
     const findchat = await Room.findOne({ roomcode }).select("chat");
 
-    // ✅ Room hi nahi mili
+    // ✅ Room not found
     if (!findchat) {
       return res.status(404).json({ message: "Room not found" });
     }
 
-    // ✅ Room hai, chat empty hai — valid case
+    // ✅ Room exists but chat is empty
     if (findchat.chat.length === 0) {
       return res.status(200).json({ chat: [] });
     }
 
-    // Cache warm karo
+    // ✅ Warm the cache
     const serialized = findchat.chat.map((m: any) => JSON.stringify(m));
     await redis.rpush(dataKey, ...serialized);
     await redis.expire(dataKey, 60 * 60 * 2);
 
-    return res.status(200).json({ chat: findchat.chat });
+    // ✅ Decrypt DB messages too (same shape as cache)
+    const decryptedChat = findchat.chat.map((message: any) => ({
+      ...message.toObject?.() ?? message, // handle Mongoose doc or plain object
+      chat: decrypt(
+        message.encryptedchat.content,
+        message.encryptedchat.iv,
+        message.encryptedchat.tag,
+      ),
+      encryptedchat: undefined,
+    }));
+
+    return res.status(200).json({ chat: decryptedChat });
   } catch (err) {
     console.error("[getchat]", err);
     return res.status(500).json({ message: "Error fetching chat" });
