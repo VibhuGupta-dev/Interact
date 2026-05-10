@@ -24,6 +24,91 @@ function getMobileGridConfig(n) {
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────
+
+const WhiteboardBtn = ({ active, onClick }) => (
+  <button
+    onClick={onClick}
+    style={{
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      border: "none",
+      background: active ? "#DCFCE7" : "#FEE2E2",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+    }}
+  >
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 28 28"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* board */}
+      <rect
+        x="3"
+        y="4"
+        width="22"
+        height="15"
+        rx="2"
+        stroke={active ? "#16A34A" : "#DC2626"}
+        strokeWidth="2"
+      />
+      {/* legs */}
+      <line
+        x1="10"
+        y1="19"
+        x2="8"
+        y2="25"
+        stroke={active ? "#16A34A" : "#DC2626"}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <line
+        x1="18"
+        y1="19"
+        x2="20"
+        y2="25"
+        stroke={active ? "#16A34A" : "#DC2626"}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      {/* writing lines */}
+      <line
+        x1="7"
+        y1="10"
+        x2="16"
+        y2="10"
+        stroke={active ? "#16A34A" : "#DC2626"}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <line
+        x1="7"
+        y1="14"
+        x2="13"
+        y2="14"
+        stroke={active ? "#16A34A" : "#DC2626"}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+    <span
+      style={{
+        fontSize: 9,
+        fontWeight: 600,
+        color: active ? "#16A34A" : "#DC2626",
+        letterSpacing: 0.3,
+      }}
+    ></span>
+  </button>
+);
+
 const MicIcon = () => (
   <svg
     className="w-5 h-5"
@@ -323,6 +408,8 @@ export function VideoStream() {
   const localScreenStreamRef = useRef(null);
   const screenVideoRef = useRef(null);
 
+
+  const [wb, setWb] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [screenSharing, setScreenSharing] = useState(false);
@@ -333,7 +420,7 @@ export function VideoStream() {
 
   const myName = useSelector((store) => store.User.name || "You");
   const users = useSelector((store) => store.User.users);
-
+  const role = useSelector((store) => store.User.role);
   const anyoneSharing = screenSharing || !!remoteScreenInfo;
   const totalParticipants = remoteUserIds.length + 1;
   const desktopGrid = getGridConfig(totalParticipants);
@@ -392,6 +479,7 @@ export function VideoStream() {
         roomcode,
         sharing: false,
       });
+      
       setCamOn(true);
       socketRef.current?.emit("media-state", { roomcode, micOn, camOn: true });
       setScreenSharing(false);
@@ -630,6 +718,10 @@ export function VideoStream() {
   // ══════════════════════════════════════════════════════════════════════
   // RENDER
   // ══════════════════════════════════════════════════════════════════════
+  const handlewhiteboard = () => {
+         setWb((p) => !p)
+setScreenSharing((p) => !p);
+        }
   return (
     <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-[#111111]">
       {/* ── Video Area ── */}
@@ -765,6 +857,13 @@ export function VideoStream() {
       {/* ── Control Bar ── */}
       {/* Mobile: larger touch targets, pill shape, floating look */}
       <div className="flex-shrink-0 flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-2.5 px-4 border-t border-white/[0.05] bg-[#1a1a1a]/80 backdrop-blur-sm">
+        {/* white board*/}
+       
+
+           {role == "Owner" ? (<WhiteboardBtn active={wb} onClick={handlewhiteboard} />) : (<div> </div>)}
+        
+
+
         <ControlBtn
           onClick={toggleMic}
           active={micOn}
